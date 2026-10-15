@@ -21,18 +21,13 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: 'any'
 
-      - name: Auto-Fix Flutter App Files
+      - name: Re-generate Flutter Android Project
         run: |
-          if [ ! -f "pubspec.yaml" ]; then
-            flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
-          elif [ ! -d "android" ]; then
-            flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
-          fi
-
-      - name: Get dependencies
-        run: flutter pub get
+          rm -rf pubspec.lock
+          flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android --force
+          flutter pub get
 
       - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
@@ -41,4 +36,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: aaj-kya-banau-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk     
