@@ -1,0 +1,238 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../models/pantry_item.dart';
+import '../state/kitchen_store.dart';
+import '../theme/app_theme.dart';
+import 'scan_screen.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<KitchenStore>();
+
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        children: [
+          const Text(
+            'Namaste 👋',
+            style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Aaj kya banau?',
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              color: AppColors.ink,
+              height: 1.1,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${store.pantry.length} items in your pantry · tap scan to add more',
+            style: const TextStyle(color: AppColors.muted),
+          ),
+          const SizedBox(height: 20),
+          _ScanCta(
+            onTap: () async {
+              final added = await Navigator.of(context).push<bool>(
+                MaterialPageRoute(builder: (_) => const ScanScreen()),
+              );
+              if (added == true && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Scanned items added to pantry')),
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 22),
+          Row(
+            children: [
+              const Text(
+                'Your pantry',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+              const Spacer(),
+              Text(
+                '${store.pantry.length}',
+                style: const TextStyle(
+                  color: AppColors.saffron,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _controller,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (value) {
+              store.addManualItem(value);
+              _controller.clear();
+            },
+            decoration: InputDecoration(
+              hintText: 'Add an item…  e.g. Methi',
+              filled: true,
+              fillColor: Colors.white,
+              prefixIcon: const Icon(Icons.add_rounded),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.send_rounded, color: AppColors.saffron),
+                onPressed: () {
+                  store.addManualItem(_controller.text);
+                  _controller.clear();
+                },
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (store.pantry.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 40),
+              child: Center(child: Text('Pantry is empty — scan or add items')),
+            )
+          else
+            ...store.pantry.map((item) => _PantryTile(item: item)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ScanCta extends StatelessWidget {
+  const _ScanCta({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.ink,
+      borderRadius: BorderRadius.circular(24),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.saffron,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(Icons.photo_camera_rounded, color: Colors.white, size: 28),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Camera scan',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Point at veggies — we will simulate AI detection',
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Colors.white),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PantryTile extends StatelessWidget {
+  const _PantryTile({required this.item});
+
+  final PantryItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dismissible(
+      key: ValueKey(item.id),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) => context.read<KitchenStore>().removePantryItem(item.id),
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: AppColors.missing.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: const Icon(Icons.delete_outline, color: AppColors.missing),
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: AppColors.cream,
+              child: Text(item.emoji, style: const TextStyle(fontSize: 22)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name,
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                  ),
+                  Text(
+                    '${item.quantity} ${item.unit}',
+                    style: const TextStyle(color: AppColors.muted, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              onPressed: () => context.read<KitchenStore>().removePantryItem(item.id),
+              icon: const Icon(Icons.close_rounded, color: AppColors.muted),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
