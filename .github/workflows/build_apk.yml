@@ -21,11 +21,13 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.16.x'
+          channel: 'stable'
 
-      - name: Create Flutter Project Structure
+      - name: Auto-Fix Flutter App Files
         run: |
-          if [ ! -d "android" ]; then
+          if [ ! -f "pubspec.yaml" ]; then
+            flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
+          elif [ ! -d "android" ]; then
             flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
           fi
 
