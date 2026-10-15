@@ -29,8 +29,8 @@ jobs:
           flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
           flutter pub get
 
-      - name: Build APK
-        run: flutter build apk --release --no-tree-shake-icons
+      - name: Build APK with Stacktrace
+        run: flutter build apk --release --no-tree-shake-icons --debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
