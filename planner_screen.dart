@@ -178,7 +178,7 @@ class _DayCard extends StatelessWidget {
             child: recipe == null
                 ? Text(
                     'Nothing planned',
-                    style: TextStyle(color: AppColors.muted.withOpacity(0.9)),
+                    style: TextStyle(color: AppColors.muted.withValues(alpha: 0.9)),
                   )
                 : Row(
                     children: [
