@@ -22,7 +22,7 @@ class RecipeMatch {
 
 class KitchenStore extends ChangeNotifier {
   KitchenStore() {
-    _loadPantry();
+    unawaited(_loadPantry());
     ensureMonthlyPlan(DateTime.now());
   }
 
