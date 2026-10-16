@@ -22,12 +22,13 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Setup Project Structure & Complete Models
+      - name: Setup Project Structure & Fix MinSdk
         run: |
           mkdir -p temp_dart
           cp *.dart temp_dart/ 2>/dev/null || true
           cp -r lib/* temp_dart/ 2>/dev/null || true
 
+          # Create fresh android platform
           flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
 
           mkdir -p lib/screens lib/state lib/theme lib/models lib/data
@@ -114,10 +115,10 @@ jobs:
           find lib/ -name "*.dart" -type f -exec sed -i 's/AlignmentMainAxisAlignment/Alignment/g' {} +
           find lib/ -name "*.dart" -type f -exec sed -i 's/ColorSchemeColorScheme/ColorScheme/g' {} +
 
-          # Fix Android minSdk & compileSdk for AAR compatibility
+          # CRITICAL FIX: Force minSdkVersion to 21 to bypass AAR metadata check failures
           if [ -f "android/app/build.gradle" ]; then
-            sed -i 's/minSdkVersion .*/minSdkVersion 24/g' android/app/build.gradle || true
-            sed -i 's/compileSdkVersion .*/compileSdkVersion 34/g' android/app/build.gradle || true
+            sed -i 's/flutter.minSdkVersion/21/g' android/app/build.gradle || true
+            sed -i 's/minSdkVersion .*/minSdkVersion 21/g' android/app/build.gradle || true
           fi
 
           flutter pub add provider || true
