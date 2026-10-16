@@ -27,8 +27,9 @@ jobs:
           channel: stable
           cache: true
 
-      # Original Dart files are stored in the repository root.
-      # Copy them into package paths without replacing real models/catalog.
+      # The Dart sources are stored in the repository root.
+      # Copy the originals into the package paths their imports expect.
+      # Keep the real models and recipe catalog; never overwrite them with stubs.
       - name: Prepare existing app sources
         shell: bash
         run: |
@@ -58,8 +59,10 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Analyze Dart sources
-        run: flutter analyze
+      # Analyze the actual Flutter package sources. Root-level copies use relative
+      # imports intended for lib/ and are not standalone package source files.
+      - name: Analyze app and tests
+        run: flutter analyze lib test
 
       - name: Run widget tests
         run: flutter test
