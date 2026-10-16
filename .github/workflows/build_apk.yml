@@ -3,6 +3,7 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -11,7 +12,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Java 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -21,7 +22,7 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Setup Models with Emoji & Amount & Build
+      - name: Setup Project Structure & Complete Models
         run: |
           mkdir -p temp_dart
           cp *.dart temp_dart/ 2>/dev/null || true
@@ -41,7 +42,7 @@ jobs:
           cp temp_dart/kitchen_store.dart lib/state/ 2>/dev/null || true
           cp temp_dart/app_theme.dart lib/theme/ 2>/dev/null || true
 
-          # 1. PantryItem Model
+          # Models Injection
           cat << 'EOF' > lib/models/pantry_item.dart
           class PantryItem {
             final String id;
@@ -57,7 +58,6 @@ jobs:
           }
           EOF
 
-          # 2. GroceryItem Model
           cat << 'EOF' > lib/models/grocery_item.dart
           class GroceryItem {
             final String id;
@@ -73,7 +73,6 @@ jobs:
           }
           EOF
 
-          # 3. Recipe & RecipeIngredient Model with emoji & amount included
           cat << 'EOF' > lib/models/recipe.dart
           class RecipeIngredient {
             final String id;
@@ -98,7 +97,6 @@ jobs:
           }
           EOF
 
-          # 4. KitchenCatalog Data
           cat << 'EOF' > lib/data/kitchen_catalog.dart
           import '../models/pantry_item.dart';
           import '../models/recipe.dart';
@@ -109,12 +107,18 @@ jobs:
           }
           EOF
 
-          # Clean up any corruptions
+          # Clean corrupted identifiers
           find lib/ -name "*.dart" -type f -exec sed -i 's/CrossAxisAlignmentMainAxisAlignment/CrossAxisAlignment/g' {} +
           find lib/ -name "*.dart" -type f -exec sed -i 's/TextAlignMainAxisAlignment/TextAlign/g' {} +
           find lib/ -name "*.dart" -type f -exec sed -i 's/DismissDirectionMainAxisAlignment/DismissDirection/g' {} +
           find lib/ -name "*.dart" -type f -exec sed -i 's/AlignmentMainAxisAlignment/Alignment/g' {} +
           find lib/ -name "*.dart" -type f -exec sed -i 's/ColorSchemeColorScheme/ColorScheme/g' {} +
+
+          # Fix Android minSdk & compileSdk for AAR compatibility
+          if [ -f "android/app/build.gradle" ]; then
+            sed -i 's/minSdkVersion .*/minSdkVersion 24/g' android/app/build.gradle || true
+            sed -i 's/compileSdkVersion .*/compileSdkVersion 34/g' android/app/build.gradle || true
+          fi
 
           flutter pub add provider || true
           flutter pub add uuid || true
