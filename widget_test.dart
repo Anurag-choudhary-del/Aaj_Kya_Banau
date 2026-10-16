@@ -13,7 +13,13 @@ void main() {
     await tester.tap(find.text('Recipes'));
     await tester.pumpAndSettle();
     expect(find.text('AI recipe suggestions'), findsOneWidget);
-    expect(find.textContaining('Paneer Butter Masala'), findsOneWidget);
+    // The recipe list is scrollable; bring later recipe cards into the viewport.
+    await tester.scrollUntilVisible(
+      find.text('Paneer Butter Masala'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Paneer Butter Masala'), findsOneWidget);
 
     await tester.tap(find.text('Planner'));
     await tester.pumpAndSettle();
