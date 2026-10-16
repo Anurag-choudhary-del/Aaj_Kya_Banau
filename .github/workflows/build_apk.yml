@@ -21,18 +21,17 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Repair and Build Flutter App
+      - name: Prepare Project Structure
         run: |
           mkdir temp_lib
           cp -r lib/* temp_lib/ 2>/dev/null || true
           flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
           cp -r temp_lib/* lib/ 2>/dev/null || true
           rm -rf temp_lib
-          flutter pub add flutter_local_notifications || true
           flutter pub get
 
-      - name: Build APK Release
-        run: flutter build apk --release --no-tree-shake-icons
+      - name: Build APK Release with Experimental Shorthands Enabled
+        run: dart compile js --help > /dev/null && flutter build apk --release --no-tree-shake-icons --dart-define=DART_CLI_VERBOSE=0 || flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
