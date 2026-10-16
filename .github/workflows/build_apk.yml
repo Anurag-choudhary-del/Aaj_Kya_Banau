@@ -7,7 +7,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Java 17
@@ -21,20 +21,19 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Re-initialize Clean Flutter Project
+      - name: Re-generate Android Project Structure (Keep Custom Code)
         run: |
-          mkdir temp_app
-          cd temp_app
-          flutter create aaj_kya_banau --org com.aajkyabanau --platforms android
-          cp -r aaj_kya_banau/* ../
-          cd ..
-          rm -rf temp_app
+          mkdir temp_lib
+          cp -r lib/* temp_lib/ 2>/dev/null || true
+          flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
+          cp -r temp_lib/* lib/ 2>/dev/null || true
+          rm -rf temp_lib
           flutter pub get
 
       - name: Build APK Release
         run: flutter build apk --release --no-tree-shake-icons
 
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: aaj-kya-banau-apk
