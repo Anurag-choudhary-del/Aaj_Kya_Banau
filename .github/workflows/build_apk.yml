@@ -21,7 +21,7 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Setup Directory Structure and Models
+      - name: Setup Complete Models and Build
         run: |
           mkdir -p temp_dart
           cp *.dart temp_dart/ 2>/dev/null || true
@@ -41,10 +41,11 @@ jobs:
           cp temp_dart/kitchen_store.dart lib/state/ 2>/dev/null || true
           cp temp_dart/app_theme.dart lib/theme/ 2>/dev/null || true
 
-          echo 'class GroceryItem { final String id; final String name; final String emoji; int quantity; GroceryItem({required this.id, required this.name, required this.emoji, this.quantity = 1}); int get lineTotal => quantity; }' > lib/models/grocery_item.dart
-          echo 'class PantryItem { final String id; final String name; final String emoji; int quantity; PantryItem({required this.id, required this.name, required this.emoji, this.quantity = 1}); }' > lib/models/pantry_item.dart
-          echo 'class RecipeIngredient { final String key; final String name; final num quantity; RecipeIngredient({required this.key, required this.name, this.quantity = 1}); } class Recipe { final String id; final String title; final List<RecipeIngredient> ingredients; Recipe({required this.id, required this.title, required this.ingredients}); }' > lib/models/recipe.dart
-          echo "import '../models/pantry_item.dart'; import '../models/recipe.dart'; class KitchenCatalog { static List<PantryItem> starterPantry() => [PantryItem(id: 'p-salt', name: 'Salt', emoji: '🧂', quantity: 1)]; static List<PantryItem> scanFinds() => starterPantry(); static List<Recipe> get recipes => [Recipe(id: 'r-toast', title: 'Simple Toast', ingredients: [RecipeIngredient(key: 'p-salt', name: 'Salt')])]; }" > lib/data/kitchen_catalog.dart
+          # Injecting complete models with all required compatibility getters
+          echo 'class PantryItem { final String id; final double quantity; final String unit; PantryItem({required this.id, required this.quantity, required this.unit}); String get key => id; }' > lib/models/pantry_item.dart
+          echo 'class GroceryItem { final String id; final String name; final int quantity; final double price; GroceryItem({required this.id, required this.name, required this.quantity, required this.price}); int get lineTotal => quantity; }' > lib/models/grocery_item.dart
+          echo 'class RecipeIngredient { final String name; final String emoji; final String amount; RecipeIngredient({required this.name, required this.emoji, required this.amount}); } class Recipe { final String id; final String name; final String emoji; final String tagline; final int minutes; final String spice; final List<RecipeIngredient> ingredients; Recipe({required this.id, required this.name, required this.emoji, required this.tagline, required this.minutes, required this.spice, required this.ingredients}); }' > lib/models/recipe.dart
+          echo "import '../models/pantry_item.dart'; import '../models/recipe.dart'; class KitchenCatalog { static List<PantryItem> starterPantry() => [PantryItem(id: 'p-salt', quantity: 1.0, unit: 'pinch')]; static List<PantryItem> scanFinds() => starterPantry(); static List<Recipe> get recipes => [Recipe(id: 'r-toast', name: 'Simple Toast', emoji: '🍞', tagline: 'Easy breakfast', minutes: 5, spice: 'Mild', ingredients: [RecipeIngredient(name: 'Salt', emoji: '🧂', amount: '1 pinch')])]; }" > lib/data/kitchen_catalog.dart
 
           find lib/ -name "*.dart" -type f -exec sed -i 's/CrossAxisAlignmentMainAxisAlignment/CrossAxisAlignment/g' {} +
           find lib/ -name "*.dart" -type f -exec sed -i 's/TextAlignMainAxisAlignment/TextAlign/g' {} +
