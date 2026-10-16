@@ -188,7 +188,7 @@ class _MatchBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -239,7 +239,7 @@ class _IngredientChip extends StatelessWidget {
         color: missing ? const Color(0xFFFFEBEE) : const Color(0xFFE8F5E9),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: missing ? AppColors.missing.withOpacity(0.35) : AppColors.have.withOpacity(0.25),
+          color: missing ? AppColors.missing.withValues(alpha: 0.35) : AppColors.have.withValues(alpha: 0.25),
         ),
       ),
       child: Text(
