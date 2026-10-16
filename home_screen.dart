@@ -191,7 +191,7 @@ class _PantryTile extends StatelessWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
-          color: AppColors.missing.withOpacity(0.15),
+          color: AppColors.missing.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(18),
         ),
         child: const Icon(Icons.delete_outline, color: AppColors.missing),
