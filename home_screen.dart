@@ -46,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '${store.pantry.length} items in your pantry · tap scan to add more',
+            '${store.pantry.length} items in your pantry · scan or upload a photo to add more',
             style: const TextStyle(color: AppColors.muted),
           ),
           const SizedBox(height: 20),
@@ -160,7 +160,7 @@ class _ScanCta extends StatelessWidget {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Point at veggies — we will simulate AI detection',
+                      'Take a photo or upload one for AI ingredient recognition',
                       style: TextStyle(color: Colors.white70, fontSize: 13),
                     ),
                   ],
