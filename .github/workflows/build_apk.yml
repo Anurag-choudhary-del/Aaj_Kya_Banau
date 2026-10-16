@@ -21,23 +21,25 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Prepare Project Structure
+      - name: Preserve Custom Code & Auto-Fix Shorthands
         run: |
-          mkdir temp_lib
-          cp -r lib/* temp_lib/ 2>/dev/null || true
-          flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
-          cp -r temp_lib/* lib/ 2>/dev/null || true
-          rm -rf temp_lib
+          # 1. Back up original custom screens
+          cp -r lib lib_backup
 
-      - name: Auto-Fix Dart Shorthand Errors in Code
-        run: |
+          # 2. Re-create android configuration files
+          flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
+
+          # 3. Force restore custom screens over default files
+          rm -rf lib
+          cp -r lib_backup lib
+          rm -rf lib_backup
+
+          # 4. Auto-fix shorthand syntax
           find lib/ -name "*.dart" -type f -exec sed -i 's/\.fromSeed/ColorScheme.fromSeed/g' {} +
           find lib/ -name "*.dart" -type f -exec sed -i 's/\.center/MainAxisAlignment.center/g' {} +
           find lib/ -name "*.dart" -type f -exec sed -i 's/\.start/MainAxisAlignment.start/g' {} +
           find lib/ -name "*.dart" -type f -exec sed -i 's/\.end/MainAxisAlignment.end/g' {} +
-          find lib/ -name "*.dart" -type f -exec sed -i 's/\.spaceAround/MainAxisAlignment.spaceAround/g' {} +
-          find lib/ -name "*.dart" -type f -exec sed -i 's/\.spaceBetween/MainAxisAlignment.spaceBetween/g' {} +
-          find lib/ -name "*.dart" -type f -exec sed -i 's/\.spaceEvenly/MainAxisAlignment.spaceEvenly/g' {} +
+          
           flutter pub get
 
       - name: Build APK Release
