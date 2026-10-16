@@ -21,7 +21,7 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Setup Project Structure & Models
+      - name: Apply Exact Model Definitions & Build APK
         run: |
           mkdir -p temp_dart
           cp *.dart temp_dart/ 2>/dev/null || true
@@ -41,19 +41,176 @@ jobs:
           cp temp_dart/kitchen_store.dart lib/state/ 2>/dev/null || true
           cp temp_dart/app_theme.dart lib/theme/ 2>/dev/null || true
 
-          # Models implementation
-          echo 'class PantryItem { final String id; final double quantity; final String unit; PantryItem({required this.id, required this.quantity, required this.unit}); String get key => id; }' > lib/models/pantry_item.dart
-          echo 'class GroceryItem { final String id; final String name; final int quantity; final double price; GroceryItem({required this.id, required this.name, required this.quantity, required this.price}); int get lineTotal => quantity; }' > lib/models/grocery_item.dart
-          echo 'class RecipeIngredient { final String name; final String emoji; final String amount; RecipeIngredient({required this.name, required this.emoji, required this.amount}); } class Recipe { final String id; final String name; final String emoji; final String tagline; final int minutes; final String spice; final List<RecipeIngredient> ingredients; Recipe({required this.id, required this.name, required this.emoji, required this.tagline, required this.minutes, required this.spice, required this.ingredients}); }' > lib/models/recipe.dart
-          echo "import '../models/pantry_item.dart'; import '../models/recipe.dart'; class KitchenCatalog { static List<PantryItem> starterPantry() => [PantryItem(id: 'p-salt', quantity: 1.0, unit: 'pinch')]; static List<PantryItem> scanFinds() => starterPantry(); static List<Recipe> get recipes => [Recipe(id: 'r-toast', name: 'Simple Toast', emoji: '🍞', tagline: 'Easy breakfast', minutes: 5, spice: 'Mild', ingredients: [RecipeIngredient(name: 'Salt', emoji: '🧂', amount: '1 pinch')])]; }" > lib/data/kitchen_catalog.dart
+          # 1. PantryItem Model with copyWith, name, emoji, key
+          cat << 'EOF' > lib/models/pantry_item.dart
+          class PantryItem {
+            final String id;
+            final String name;
+            final String emoji;
+            final double quantity;
+            final String unit;
+
+            PantryItem({
+              required this.id,
+              required this.name,
+              required this.emoji,
+              required this.quantity,
+              this.unit = '',
+            });
+
+            String get key => id;
+
+            PantryItem copyWith({
+              String? id,
+              String? name,
+              String? emoji,
+              double? quantity,
+              String? unit,
+            }) {
+              return PantryItem(
+                id: id ?? this.id,
+                name: name ?? this.name,
+                emoji: emoji ?? this.emoji,
+                quantity: quantity ?? this.quantity,
+                unit: unit ?? this.unit,
+              );
+            }
+          }
+          EOF
+
+          # 2. GroceryItem Model with copyWith, emoji, price, lineTotal
+          cat << 'EOF' > lib/models/grocery_item.dart
+          class GroceryItem {
+            final String id;
+            final String name;
+            final String emoji;
+            final int quantity;
+            final double price;
+
+            GroceryItem({
+              required this.id,
+              required this.name,
+              required this.emoji,
+              required this.quantity,
+              this.price = 0.0,
+            });
+
+            int get lineTotal => quantity;
+
+            GroceryItem copyWith({
+              String? id,
+              String? name,
+              String? emoji,
+              int? quantity,
+              double? price,
+            }) {
+              return GroceryItem(
+                id: id ?? this.id,
+                name: name ?? this.name,
+                emoji: emoji ?? this.emoji,
+                quantity: quantity ?? this.quantity,
+                price: price ?? this.price,
+              );
+            }
+          }
+          EOF
+
+          # 3. Recipe & RecipeIngredient Models with key getter and copyWith
+          cat << 'EOF' > lib/models/recipe.dart
+          class RecipeIngredient {
+            final String id;
+            final String name;
+            final double quantity;
+            final String unit;
+
+            RecipeIngredient({
+              required this.id,
+              required this.name,
+              required this.quantity,
+              required this.unit,
+            });
+
+            String get key => id;
+
+            RecipeIngredient copyWith({
+              String? id,
+              String? name,
+              double? quantity,
+              String? unit,
+            }) {
+              return RecipeIngredient(
+                id: id ?? this.id,
+                name: name ?? this.name,
+                quantity: quantity ?? this.quantity,
+                unit: unit ?? this.unit,
+              );
+            }
+          }
+
+          class Recipe {
+            final String id;
+            final String name;
+            final String title;
+            final String emoji;
+            final String tagline;
+            final int minutes;
+            final String spice;
+            final List<RecipeIngredient> ingredients;
+
+            Recipe({
+              required this.id,
+              this.name = '',
+              this.title = '',
+              this.emoji = '',
+              this.tagline = '',
+              this.minutes = 0,
+              this.spice = '',
+              required this.ingredients,
+            });
+          }
+          EOF
+
+          # 4. KitchenCatalog Data Source
+          cat << 'EOF' > lib/data/kitchen_catalog.dart
+          import '../models/pantry_item.dart';
+          import '../models/recipe.dart';
+
+          class KitchenCatalog {
+            static List<PantryItem> starterPantry() => [
+                  PantryItem(id: 'p-salt', name: 'Salt', emoji: '🧂', quantity: 1.0, unit: 'pinch'),
+                ];
+            static List<PantryItem> scanFinds() => starterPantry();
+            static List<Recipe> get recipes => [
+                  Recipe(
+                    id: 'r-toast',
+                    name: 'Simple Toast',
+                    title: 'Simple Toast',
+                    emoji: '🍞',
+                    tagline: 'Quick breakfast',
+                    minutes: 5,
+                    spice: 'Mild',
+                    ingredients: [
+                      RecipeIngredient(id: 'p-salt', name: 'Salt', quantity: 1.0, unit: 'pinch')
+                    ],
+                  ),
+                ];
+          }
+          EOF
+
+          # Clean up any potential token corruptions
+          find lib/ -name "*.dart" -type f -exec sed -i 's/CrossAxisAlignmentMainAxisAlignment/CrossAxisAlignment/g' {} +
+          find lib/ -name "*.dart" -type f -exec sed -i 's/TextAlignMainAxisAlignment/TextAlign/g' {} +
+          find lib/ -name "*.dart" -type f -exec sed -i 's/DismissDirectionMainAxisAlignment/DismissDirection/g' {} +
+          find lib/ -name "*.dart" -type f -exec sed -i 's/AlignmentMainAxisAlignment/Alignment/g' {} +
+          find lib/ -name "*.dart" -type f -exec sed -i 's/ColorSchemeColorScheme/ColorScheme/g' {} +
 
           flutter pub add provider || true
           flutter pub add uuid || true
           flutter pub add flutter_local_notifications || true
           flutter pub get
 
-      - name: Build APK Release with Full Stacktrace
-        run: flutter build apk --release --no-tree-shake-icons --verbose
+      - name: Build APK Release
+        run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
