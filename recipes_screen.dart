@@ -137,36 +137,44 @@ class _RecipeCard extends StatelessWidget {
 
   Future<void> _pickDay(BuildContext context, Recipe recipe) async {
     final store = context.read<KitchenStore>();
-    final day = await showModalBottomSheet<String>(
+    final now = DateTime.now();
+    final month = DateTime(now.year, now.month);
+    final totalDays = DateTime(now.year, now.month + 1, 0).day;
+    final plan = store.monthlyPlanFor(month);
+    final selected = await showModalBottomSheet<DateTime>(
       context: context,
       showDragHandle: true,
       builder: (context) {
+        const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         return ListView(
           shrinkWrap: true,
           children: [
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 8, 20, 8),
-              child: Text(
-                'Add to weekly planner',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
-              ),
+              child: Text("Add to this month's planner",
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
             ),
-            for (final d in KitchenStore.days)
-              ListTile(
-                title: Text(d),
-                subtitle: Text(store.plan[d]?.name ?? 'Open slot'),
-                onTap: () => Navigator.pop(context, d),
-              ),
+            for (var day = 1; day <= totalDays; day++)
+              Builder(builder: (context) {
+                final date = DateTime(now.year, now.month, day);
+                final existing = plan[store.dateKey(date)];
+                return ListTile(
+                  title: Text('${weekdays[date.weekday - 1]}, ${date.day}/${date.month}'),
+                  subtitle: Text(existing?.name ?? 'No meal selected'),
+                  trailing: existing?.id == recipe.id ? const Icon(Icons.check) : null,
+                  onTap: () => Navigator.pop(context, date),
+                );
+              }),
             const SizedBox(height: 12),
           ],
         );
       },
     );
-    if (day != null) {
-      store.assignMeal(day, recipe);
+    if (selected != null) {
+      store.assignMeal(selected, recipe);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${recipe.name} planned for $day')),
+          SnackBar(content: Text('${recipe.name} planned for ${selected.day}/${selected.month}')),
         );
       }
     }
