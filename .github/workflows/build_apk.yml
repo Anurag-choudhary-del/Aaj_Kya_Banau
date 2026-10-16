@@ -21,13 +21,14 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Re-generate Android Project Structure (Keep Custom Code)
+      - name: Repair and Build Flutter App
         run: |
           mkdir temp_lib
           cp -r lib/* temp_lib/ 2>/dev/null || true
           flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
           cp -r temp_lib/* lib/ 2>/dev/null || true
           rm -rf temp_lib
+          flutter pub add flutter_local_notifications || true
           flutter pub get
 
       - name: Build APK Release
