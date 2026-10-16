@@ -97,7 +97,7 @@ class _ScanScreenState extends State<ScanScreen> with SingleTickerProviderStateM
                                     color: AppColors.saffron,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.saffron.withOpacity(0.7),
+                                        color: AppColors.saffron.withValues(alpha: 0.7),
                                         blurRadius: 12,
                                       ),
                                     ],
@@ -112,7 +112,7 @@ class _ScanScreenState extends State<ScanScreen> with SingleTickerProviderStateM
                                   margin: const EdgeInsets.all(12),
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.72),
+                                    color: Colors.black.withValues(alpha: 0.72),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Column(
