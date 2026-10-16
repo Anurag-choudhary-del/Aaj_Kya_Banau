@@ -24,6 +24,15 @@ class _ScanScreenState extends State<ScanScreen> {
   bool _loading = false;
   String? _error;
 
+  @override
+  void initState() {
+    super.initState();
+    // Home screen par Camera scan tap karte hi phone ka camera khul jaye.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _chooseImage(ImageSource.camera);
+    });
+  }
+
   Future<void> _chooseImage(ImageSource source) async {
     if (_loading) return;
     try {
