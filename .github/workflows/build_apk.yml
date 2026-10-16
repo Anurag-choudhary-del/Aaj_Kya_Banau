@@ -1,8 +1,12 @@
 name: Build Flutter APK
+
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -14,199 +18,102 @@ jobs:
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: zulu
           java-version: '17'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: stable
+          cache: true
 
-      - name: Inject Clean Models, Fix Gradle & Build
+      # The original Dart files are stored in the repository root.
+      # Copy them into the package paths their imports expect.
+      # Do not replace the real models or recipe catalog with placeholders.
+      - name: Prepare existing app sources
+        shell: bash
         run: |
-          mkdir -p temp_dart
-          cp *.dart temp_dart/ 2>/dev/null || true
-          cp -r lib/* temp_dart/ 2>/dev/null || true
+          set -euo pipefail
 
           flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
 
-          mkdir -p lib/screens lib/state lib/theme lib/models lib/data
+          mkdir -p lib/screens lib/state lib/theme lib/models lib/data test
 
-          cp temp_dart/*.dart lib/ 2>/dev/null || true
-          cp temp_dart/main_shell.dart lib/screens/ 2>/dev/null || true
-          cp temp_dart/home_screen.dart lib/screens/ 2>/dev/null || true
-          cp temp_dart/recipes_screen.dart lib/screens/ 2>/dev/null || true
-          cp temp_dart/planner_screen.dart lib/screens/ 2>/dev/null || true
-          cp temp_dart/cart_screen.dart lib/screens/ 2>/dev/null || true
-          cp temp_dart/scan_screen.dart lib/screens/ 2>/dev/null || true
-          cp temp_dart/kitchen_store.dart lib/state/ 2>/dev/null || true
-          cp temp_dart/app_theme.dart lib/theme/ 2>/dev/null || true
+          cp main.dart lib/main.dart
+          cp main_shell.dart lib/screens/main_shell.dart
+          cp home_screen.dart lib/screens/home_screen.dart
+          cp recipes_screen.dart lib/screens/recipes_screen.dart
+          cp planner_screen.dart lib/screens/planner_screen.dart
+          cp cart_screen.dart lib/screens/cart_screen.dart
+          cp scan_screen.dart lib/screens/scan_screen.dart
 
-          # 1. PantryItem Model
-          cat << 'EOF' > lib/models/pantry_item.dart
-          class PantryItem {
-            final String id;
-            final String name;
-            final String emoji;
-            final double quantity;
-            final String unit;
+          cp kitchen_store.dart lib/state/kitchen_store.dart
+          cp app_theme.dart lib/theme/app_theme.dart
 
-            PantryItem({
-              required this.id,
-              this.name = '',
-              this.emoji = '',
-              required this.quantity,
-              this.unit = '',
-            });
+          cp pantry_item.dart lib/models/pantry_item.dart
+          cp grocery_item.dart lib/models/grocery_item.dart
+          cp recipe.dart lib/models/recipe.dart
+          cp kitchen_catalog.dart lib/data/kitchen_catalog.dart
 
-            PantryItem copyWith({
-              String? id,
-              String? name,
-              String? emoji,
-              double? quantity,
-              String? unit,
-            }) {
-              return PantryItem(
-                id: id ?? this.id,
-                name: name ?? this.name,
-                emoji: emoji ?? this.emoji,
-                quantity: quantity ?? this.quantity,
-                unit: unit ?? this.unit,
-              );
-            }
+          cp widget_test.dart test/widget_test.dart
 
-            String get key => id;
-          }
-          EOF
+      - name: Configure Android core library desugaring
+        shell: bash
+        run: |
+          set -euo pipefail
 
-          # 2. GroceryItem Model
-          cat << 'EOF' > lib/models/grocery_item.dart
-          class GroceryItem {
-            final String id;
-            final String name;
-            final String emoji;
-            final int quantity;
-            final double price;
-
-            GroceryItem({
-              required this.id,
-              required this.name,
-              required this.quantity,
-              this.price = 0.0,
-              this.emoji = '',
-            });
-
-            GroceryItem copyWith({
-              String? id,
-              String? name,
-              String? emoji,
-              int? quantity,
-              double? price,
-            }) {
-              return GroceryItem(
-                id: id ?? this.id,
-                name: name ?? this.name,
-                quantity: quantity ?? this.quantity,
-                price: price ?? this.price,
-                emoji: emoji ?? this.emoji,
-              );
-            }
-
-            int get lineTotal => quantity;
-          }
-          EOF
-
-          # 3. Recipe & RecipeIngredient Model
-          cat << 'EOF' > lib/models/recipe.dart
-          class RecipeIngredient {
-            final String id;
-            final String name;
-            final String emoji;
-            final String amount;
-            final num quantity;
-
-            RecipeIngredient({
-              this.id = '',
-              required this.name,
-              this.emoji = '🧂',
-              this.amount = '1',
-              this.quantity = 1,
-            });
-
-            String get key => id.isNotEmpty ? id : name;
-          }
-
-          class Recipe {
-            final String id;
-            final String name;
-            final String title;
-            final String emoji;
-            final String tagline;
-            final int minutes;
-            final String spice;
-            final List<RecipeIngredient> ingredients;
-
-            Recipe({
-              required this.id,
-              this.name = '',
-              this.title = '',
-              this.emoji = '',
-              this.tagline = '',
-              this.minutes = 0,
-              this.spice = '',
-              required this.ingredients,
-            });
-          }
-          EOF
-
-          # 4. KitchenCatalog Data Source
-          cat << 'EOF' > lib/data/kitchen_catalog.dart
-          import '../models/pantry_item.dart';
-          import '../models/recipe.dart';
-
-          class KitchenCatalog {
-            static List<PantryItem> starterPantry() => [
-                  PantryItem(id: 'p-salt', name: 'Salt', emoji: '🧂', quantity: 1.0, unit: 'pinch'),
-                ];
-            static List<PantryItem> scanFinds() => starterPantry();
-            static List<Recipe> get recipes => [
-                  Recipe(
-                    id: 'r-toast',
-                    name: 'Simple Toast',
-                    title: 'Simple Toast',
-                    emoji: '🍞',
-                    tagline: 'Quick breakfast',
-                    minutes: 5,
-                    spice: 'Mild',
-                    ingredients: [
-                      RecipeIngredient(name: 'Salt', emoji: '🧂', amount: '1 pinch')
-                    ],
-                  ),
-                ];
-          }
-          EOF
-
-          # Fix accidental token corruptions
-          find lib/ -name "*.dart" -type f -exec sed -i 's/CrossAxisAlignmentMainAxisAlignment/CrossAxisAlignment/g' {} +
-          find lib/ -name "*.dart" -type f -exec sed -i 's/TextAlignMainAxisAlignment/TextAlign/g' {} +
-          find lib/ -name "*.dart" -type f -exec sed -i 's/DismissDirectionMainAxisAlignment/DismissDirection/g' {} +
-          find lib/ -name "*.dart" -type f -exec sed -i 's/AlignmentMainAxisAlignment/Alignment/g' {} +
-          find lib/ -name "*.dart" -type f -exec sed -i 's/ColorSchemeColorScheme/ColorScheme/g' {} +
-
-          # Override minSdkVersion & Disable blocking checkReleaseAarMetadata
-          if [ -f "android/app/build.gradle" ]; then
-            sed -i 's/flutter.minSdkVersion/21/g' android/app/build.gradle || true
-            sed -i 's/minSdkVersion .*/minSdkVersion 21/g' android/app/build.gradle || true
-            echo "" >> android/app/build.gradle
-            echo "tasks.matching { it.name == 'checkReleaseAarMetadata' }.all { it.enabled = false }" >> android/app/build.gradle
+          if [ -f android/app/build.gradle ]; then
+            GRADLE_FILE="android/app/build.gradle"
+          elif [ -f android/app/build.gradle.kts ]; then
+            GRADLE_FILE="android/app/build.gradle.kts"
+          else
+            echo "Android app Gradle file not found."
+            find android/app -maxdepth 2 -type f -print
+            exit 1
           fi
+          export GRADLE_FILE
 
-          flutter pub add provider || true
-          flutter pub add uuid || true
-          flutter pub add flutter_local_notifications || true
-          flutter pub get
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
 
-      - name: Build APK Release
+          path = Path(os.environ["GRADLE_FILE"])
+          text = path.read_text()
+          is_kts = path.suffix == ".kts"
+
+          if is_kts:
+              enable_line = "isCoreLibraryDesugaringEnabled = true"
+              dependency = 'coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")'
+          else:
+              enable_line = "coreLibraryDesugaringEnabled true"
+              dependency = "coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'"
+
+          if enable_line not in text:
+              marker = "compileOptions {"
+              if marker not in text:
+                  raise SystemExit(f"Could not find compileOptions block in {path}")
+              text = text.replace(marker, marker + "\n        " + enable_line, 1)
+
+          if dependency not in text:
+              marker = "dependencies {"
+              if marker not in text:
+                  raise SystemExit(f"Could not find dependencies block in {path}")
+              text = text.replace(marker, marker + "\n    " + dependency, 1)
+
+          path.write_text(text)
+          print(f"Enabled core library desugaring in {path}")
+          PY
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Analyze Dart sources
+        run: flutter analyze
+
+      - name: Run widget tests
+        run: flutter test
+
+      - name: Build release APK
         run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK
@@ -214,3 +121,4 @@ jobs:
         with:
           name: aaj-kya-banau-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
