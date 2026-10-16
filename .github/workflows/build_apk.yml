@@ -27,17 +27,12 @@ jobs:
           channel: stable
           cache: true
 
-      # The Dart sources are stored in the repository root.
-      # Copy the originals into the package paths their imports expect.
-      # Keep the real models and recipe catalog; never overwrite them with stubs.
       - name: Prepare existing app sources
         shell: bash
         run: |
           set -euo pipefail
           flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
-
-          mkdir -p lib/screens lib/state lib/theme lib/models lib/data test
-
+          mkdir -p lib/screens lib/state lib/theme lib/models lib/data lib/services test
           cp main.dart lib/main.dart
           cp main_shell.dart lib/screens/main_shell.dart
           cp home_screen.dart lib/screens/home_screen.dart
@@ -45,22 +40,18 @@ jobs:
           cp planner_screen.dart lib/screens/planner_screen.dart
           cp cart_screen.dart lib/screens/cart_screen.dart
           cp scan_screen.dart lib/screens/scan_screen.dart
-
           cp kitchen_store.dart lib/state/kitchen_store.dart
           cp app_theme.dart lib/theme/app_theme.dart
-
           cp pantry_item.dart lib/models/pantry_item.dart
           cp grocery_item.dart lib/models/grocery_item.dart
           cp recipe.dart lib/models/recipe.dart
           cp kitchen_catalog.dart lib/data/kitchen_catalog.dart
-
+          cp ingredient_recognition_service.dart lib/services/ingredient_recognition_service.dart
           cp widget_test.dart test/widget_test.dart
 
       - name: Get dependencies
         run: flutter pub get
 
-      # Analyze the actual Flutter package sources. Root-level copies use relative
-      # imports intended for lib/ and are not standalone package source files.
       - name: Analyze app and tests
         run: flutter analyze lib test
 
@@ -68,7 +59,9 @@ jobs:
         run: flutter test
 
       - name: Build release APK
-        run: flutter build apk --release --no-tree-shake-icons
+        env:
+          AI_API_BASE_URL: ${{ vars.AI_API_BASE_URL }}
+        run: flutter build apk --release --no-tree-shake-icons --dart-define=AI_API_BASE_URL="$AI_API_BASE_URL"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
