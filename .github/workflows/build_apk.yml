@@ -27,14 +27,12 @@ jobs:
           channel: stable
           cache: true
 
-      # The original Dart files are stored in the repository root.
-      # Copy them into the package paths their imports expect.
-      # Do not replace the real models or recipe catalog with placeholders.
+      # Original Dart files are stored in the repository root.
+      # Copy them into package paths without replacing real models/catalog.
       - name: Prepare existing app sources
         shell: bash
         run: |
           set -euo pipefail
-
           flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
 
           mkdir -p lib/screens lib/state lib/theme lib/models lib/data test
@@ -56,53 +54,6 @@ jobs:
           cp kitchen_catalog.dart lib/data/kitchen_catalog.dart
 
           cp widget_test.dart test/widget_test.dart
-
-      - name: Configure Android core library desugaring
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if [ -f android/app/build.gradle ]; then
-            GRADLE_FILE="android/app/build.gradle"
-          elif [ -f android/app/build.gradle.kts ]; then
-            GRADLE_FILE="android/app/build.gradle.kts"
-          else
-            echo "Android app Gradle file not found."
-            find android/app -maxdepth 2 -type f -print
-            exit 1
-          fi
-          export GRADLE_FILE
-
-          python3 - <<'PY'
-          import os
-          from pathlib import Path
-
-          path = Path(os.environ["GRADLE_FILE"])
-          text = path.read_text()
-          is_kts = path.suffix == ".kts"
-
-          if is_kts:
-              enable_line = "isCoreLibraryDesugaringEnabled = true"
-              dependency = 'coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")'
-          else:
-              enable_line = "coreLibraryDesugaringEnabled true"
-              dependency = "coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'"
-
-          if enable_line not in text:
-              marker = "compileOptions {"
-              if marker not in text:
-                  raise SystemExit(f"Could not find compileOptions block in {path}")
-              text = text.replace(marker, marker + "\n        " + enable_line, 1)
-
-          if dependency not in text:
-              marker = "dependencies {"
-              if marker not in text:
-                  raise SystemExit(f"Could not find dependencies block in {path}")
-              text = text.replace(marker, marker + "\n    " + dependency, 1)
-
-          path.write_text(text)
-          print(f"Enabled core library desugaring in {path}")
-          PY
 
       - name: Get dependencies
         run: flutter pub get
