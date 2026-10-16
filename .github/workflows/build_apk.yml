@@ -22,7 +22,7 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Setup Project, Models & Bypass Metadata Check
+      - name: Setup Project, Inject Compatible Models & Override Gradle
         run: |
           mkdir -p temp_dart
           cp *.dart temp_dart/ 2>/dev/null || true
@@ -42,7 +42,7 @@ jobs:
           cp temp_dart/kitchen_store.dart lib/state/ 2>/dev/null || true
           cp temp_dart/app_theme.dart lib/theme/ 2>/dev/null || true
 
-          # Models Injection
+          # 1. PantryItem Model
           cat << 'EOF' > lib/models/pantry_item.dart
           class PantryItem {
             final String id;
@@ -50,14 +50,36 @@ jobs:
             final String emoji;
             final double quantity;
             final String unit;
-            PantryItem({required this.id, this.name = '', this.emoji = '', required this.quantity, this.unit = ''});
-            PantryItem copyWith({String? id, String? name, String? emoji, double? quantity, String? unit}) {
-              return PantryItem(id: id ?? this.id, name: name ?? this.name, emoji: emoji ?? this.emoji, quantity: quantity ?? this.quantity, unit: unit ?? this.unit);
+
+            PantryItem({
+              required this.id,
+              this.name = '',
+              this.emoji = '',
+              required this.quantity,
+              this.unit = '',
+            });
+
+            PantryItem copyWith({
+              String? id,
+              String? name,
+              String? emoji,
+              double? quantity,
+              String? unit,
+            }) {
+              return PantryItem(
+                id: id ?? this.id,
+                name: name ?? this.name,
+                emoji: emoji ?? this.emoji,
+                quantity: quantity ?? this.quantity,
+                unit: unit ?? this.unit,
+              );
             }
+
             String get key => id;
           }
           EOF
 
+          # 2. GroceryItem Model
           cat << 'EOF' > lib/models/grocery_item.dart
           class GroceryItem {
             final String id;
@@ -65,14 +87,36 @@ jobs:
             final String emoji;
             final int quantity;
             final double price;
-            GroceryItem({required this.id, required this.name, required this.quantity, this.price = 0.0, this.emoji = ''});
-            GroceryItem copyWith({String? id, String? name, String? emoji, int? quantity, double? price}) {
-              return GroceryItem(id: id ?? this.id, name: name ?? this.name, quantity: quantity ?? this.quantity, price: price ?? this.price, emoji: emoji ?? this.emoji);
+
+            GroceryItem({
+              required this.id,
+              required this.name,
+              required this.quantity,
+              this.price = 0.0,
+              this.emoji = '',
+            });
+
+            GroceryItem copyWith({
+              String? id,
+              String? name,
+              String? emoji,
+              int? quantity,
+              double? price,
+            }) {
+              return GroceryItem(
+                id: id ?? this.id,
+                name: name ?? this.name,
+                quantity: quantity ?? this.quantity,
+                price: price ?? this.price,
+                emoji: emoji ?? this.emoji,
+              );
             }
+
             int get lineTotal => quantity;
           }
           EOF
 
+          # 3. Recipe & RecipeIngredient Model
           cat << 'EOF' > lib/models/recipe.dart
           class RecipeIngredient {
             final String id;
@@ -80,7 +124,15 @@ jobs:
             final String emoji;
             final String amount;
             final num quantity;
-            RecipeIngredient({this.id = '', required this.name, this.emoji = '🧂', this.amount = '1', this.quantity = 1});
+
+            RecipeIngredient({
+              this.id = '',
+              required this.name,
+              this.emoji = '🧂',
+              this.amount = '1',
+              this.quantity = 1,
+            });
+
             String get key => id.isNotEmpty ? id : name;
           }
 
@@ -93,29 +145,60 @@ jobs:
             final int minutes;
             final String spice;
             final List<RecipeIngredient> ingredients;
-            Recipe({required this.id, this.name = '', this.title = '', this.emoji = '', this.tagline = '', this.minutes = 0, this.spice = '', required this.ingredients});
+
+            Recipe({
+              required this.id,
+              this.name = '',
+              this.title = '',
+              this.emoji = '',
+              this.tagline = '',
+              this.minutes = 0,
+              this.spice = '',
+              required this.ingredients,
+            });
           }
           EOF
 
+          # 4. KitchenCatalog Data
           cat << 'EOF' > lib/data/kitchen_catalog.dart
           import '../models/pantry_item.dart';
           import '../models/recipe.dart';
+
           class KitchenCatalog {
-            static List<PantryItem> starterPantry() => [PantryItem(id: 'p-salt', name: 'Salt', emoji: '🧂', quantity: 1.0, unit: 'pinch')];
+            static List<PantryItem> starterPantry() => [
+                  PantryItem(id: 'p-salt', name: 'Salt', emoji: '🧂', quantity: 1.0, unit: 'pinch'),
+                ];
             static List<PantryItem> scanFinds() => starterPantry();
-            static List<Recipe> get recipes => [Recipe(id: 'r-toast', name: 'Simple Toast', title: 'Simple Toast', emoji: '🍞', tagline: 'Quick breakfast', minutes: 5, spice: 'Mild', ingredients: [RecipeIngredient(name: 'Salt', emoji: '🧂', amount: '1 pinch')])];
+            static List<Recipe> get recipes => [
+                  Recipe(
+                    id: 'r-toast',
+                    name: 'Simple Toast',
+                    title: 'Simple Toast',
+                    emoji: '🍞',
+                    tagline: 'Quick breakfast',
+                    minutes: 5,
+                    spice: 'Mild',
+                    ingredients: [
+                      RecipeIngredient(name: 'Salt', emoji: '🧂', amount: '1 pinch')
+                    ],
+                  ),
+                ];
           }
           EOF
 
-          # Clean corrupted identifiers
+          # Token Cleanups
           find lib/ -name "*.dart" -type f -exec sed -i 's/CrossAxisAlignmentMainAxisAlignment/CrossAxisAlignment/g' {} +
           find lib/ -name "*.dart" -type f -exec sed -i 's/TextAlignMainAxisAlignment/TextAlign/g' {} +
           find lib/ -name "*.dart" -type f -exec sed -i 's/DismissDirectionMainAxisAlignment/DismissDirection/g' {} +
           find lib/ -name "*.dart" -type f -exec sed -i 's/AlignmentMainAxisAlignment/Alignment/g' {} +
           find lib/ -name "*.dart" -type f -exec sed -i 's/ColorSchemeColorScheme/ColorScheme/g' {} +
 
-          # DEFINITIVE FIX: Disable checkReleaseAarMetadata task completely in build.gradle
+          # Override minSdkVersion to 21
           if [ -f "android/app/build.gradle" ]; then
+            sed -i 's/flutter.minSdkVersion/21/g' android/app/build.gradle || true
+            sed -i 's/minSdkVersion .*/minSdkVersion 21/g' android/app/build.gradle || true
+            
+            # Disable checkReleaseAarMetadata task completely
             echo "" >> android/app/build.gradle
             echo "tasks.matching { it.name == 'checkReleaseAarMetadata' }.all { it.enabled = false }" >> android/app/build.gradle
           fi
