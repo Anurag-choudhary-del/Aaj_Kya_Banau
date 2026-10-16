@@ -28,10 +28,20 @@ jobs:
           flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
           cp -r temp_lib/* lib/ 2>/dev/null || true
           rm -rf temp_lib
+
+      - name: Auto-Fix Dart Shorthand Errors in Code
+        run: |
+          find lib/ -name "*.dart" -type f -exec sed -i 's/\.fromSeed/ColorScheme.fromSeed/g' {} +
+          find lib/ -name "*.dart" -type f -exec sed -i 's/\.center/MainAxisAlignment.center/g' {} +
+          find lib/ -name "*.dart" -type f -exec sed -i 's/\.start/MainAxisAlignment.start/g' {} +
+          find lib/ -name "*.dart" -type f -exec sed -i 's/\.end/MainAxisAlignment.end/g' {} +
+          find lib/ -name "*.dart" -type f -exec sed -i 's/\.spaceAround/MainAxisAlignment.spaceAround/g' {} +
+          find lib/ -name "*.dart" -type f -exec sed -i 's/\.spaceBetween/MainAxisAlignment.spaceBetween/g' {} +
+          find lib/ -name "*.dart" -type f -exec sed -i 's/\.spaceEvenly/MainAxisAlignment.spaceEvenly/g' {} +
           flutter pub get
 
-      - name: Build APK Release with Experimental Shorthands Enabled
-        run: dart compile js --help > /dev/null && flutter build apk --release --no-tree-shake-icons --dart-define=DART_CLI_VERBOSE=0 || flutter build apk --release --no-tree-shake-icons
+      - name: Build APK Release
+        run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
