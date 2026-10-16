@@ -43,7 +43,7 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: Colors.brown.withOpacity(0.08)),
+          side: BorderSide(color: Colors.brown.withValues(alpha: 0.08)),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -59,7 +59,7 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: Colors.white,
-        indicatorColor: AppColors.saffron.withOpacity(0.18),
+        indicatorColor: AppColors.saffron.withValues(alpha: 0.18),
         labelTextStyle: WidgetStateProperty.all(
           const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         ),
