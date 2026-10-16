@@ -21,21 +21,40 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Organize Code into lib/ & Auto-Fix Shorthands
+      - name: Fix Directory Structure, Imports & Dependencies
         run: |
-          # 1. Create lib directory and move all .dart files into lib/
-          mkdir -p lib
-          mv *.dart lib/ 2>/dev/null || true
+          # 1. Backup all dart files
+          mkdir -p temp_dart
+          cp *.dart temp_dart/ 2>/dev/null || true
+          cp -r lib/* temp_dart/ 2>/dev/null || true
 
-          # 2. Re-create android project structure safely
+          # 2. Generate clean android project
           flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
 
-          # 3. Auto-fix experimental dot-shorthand syntax in all dart files
+          # 3. Create correct subfolder structure in lib/
+          mkdir -p lib/screens lib/state lib/theme
+
+          # 4. Copy all files into root lib/ as well as subfolders for safe import resolution
+          cp temp_dart/*.dart lib/ 2>/dev/null || true
+          cp temp_dart/main_shell.dart lib/screens/ 2>/dev/null || true
+          cp temp_dart/home_screen.dart lib/screens/ 2>/dev/null || true
+          cp temp_dart/recipes_screen.dart lib/screens/ 2>/dev/null || true
+          cp temp_dart/planner_screen.dart lib/screens/ 2>/dev/null || true
+          cp temp_dart/cart_screen.dart lib/screens/ 2>/dev/null || true
+          cp temp_dart/scan_screen.dart lib/screens/ 2>/dev/null || true
+          cp temp_dart/kitchen_store.dart lib/state/ 2>/dev/null || true
+          cp temp_dart/app_theme.dart lib/theme/ 2>/dev/null || true
+          rm -rf temp_dart
+
+          # 5. Fix experimental shorthand syntax
           find lib/ -name "*.dart" -type f -exec sed -i 's/\.fromSeed/ColorScheme.fromSeed/g' {} +
           find lib/ -name "*.dart" -type f -exec sed -i 's/\.center/MainAxisAlignment.center/g' {} +
           find lib/ -name "*.dart" -type f -exec sed -i 's/\.start/MainAxisAlignment.start/g' {} +
           find lib/ -name "*.dart" -type f -exec sed -i 's/\.end/MainAxisAlignment.end/g' {} +
 
+          # 6. Install required packages
+          flutter pub add provider || true
+          flutter pub add flutter_local_notifications || true
           flutter pub get
 
       - name: Build APK Release
