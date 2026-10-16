@@ -7,25 +7,34 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout repo code
         uses: actions/checkout@v4
+
       - name: Set up Java 17
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '17'
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - name: Get dependencies & Clean Build
+
+      - name: Re-initialize Clean Flutter Project
         run: |
+          mkdir temp_app
+          cd temp_app
+          flutter create aaj_kya_banau --org com.aajkyabanau --platforms android
+          cp -r aaj_kya_banau/* ../
+          cd ..
+          rm -rf temp_app
           flutter pub get
-          flutter clean
-          flutter pub get
-      - name: Build Release APK
+
+      - name: Build APK Release
         run: flutter build apk --release --no-tree-shake-icons
-      - name: Upload APK
+
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: aaj-kya-banau-apk
