@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../data/kitchen_catalog.dart';
+import '../data/planner_catalog.dart';
 import '../models/grocery_item.dart';
 import '../models/pantry_item.dart';
 import '../models/recipe.dart';
@@ -23,11 +24,13 @@ class RecipeMatch {
 class KitchenStore extends ChangeNotifier {
   KitchenStore() {
     unawaited(_loadPantry());
+    unawaited(_loadPlannerSelections());
     ensureMonthlyPlan(DateTime.now());
   }
 
   static const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   static const _pantryStorageKey = 'aaj_kya_banau_pantry_v1';
+  static const _plannerStorageKey = 'aaj_kya_banau_planner_v1';
 
   final _uuid = const Uuid();
   final List<PantryItem> _pantry = [];
@@ -71,6 +74,7 @@ class KitchenStore extends ChangeNotifier {
 
   void selectPlannerMeal(DateTime date, String category, Recipe recipe) {
     _plannerSelections.putIfAbsent(dateKey(date), () => <String, Recipe>{})[category] = recipe;
+    unawaited(_savePlannerSelections());
     notifyListeners();
   }
 
@@ -88,6 +92,50 @@ class KitchenStore extends ChangeNotifier {
       plan[dateKey(date)] = recipe;
     }
     notifyListeners();
+  }
+
+  Future<void> _loadPlannerSelections() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_plannerStorageKey);
+      if (raw == null) return;
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return;
+      final recipesById = <String, Recipe>{
+        for (final recipes in PlannerCatalog.categories.values)
+          for (final recipe in recipes) recipe.id: recipe,
+      };
+      for (final dateEntry in decoded.entries) {
+        if (dateEntry.key is! String || dateEntry.value is! Map) continue;
+        final selections = <String, Recipe>{};
+        for (final mealEntry in (dateEntry.value as Map).entries) {
+          if (mealEntry.key is! String || mealEntry.value is! String) continue;
+          final recipe = recipesById[mealEntry.value as String];
+          if (recipe != null && PlannerCatalog.categories.containsKey(mealEntry.key as String)) {
+            selections[mealEntry.key as String] = recipe;
+          }
+        }
+        if (selections.isNotEmpty) _plannerSelections[dateEntry.key as String] = selections;
+      }
+    } catch (_) {
+      // Ignore malformed saved planner data and use generated suggestions.
+    }
+    notifyListeners();
+  }
+
+  Future<void> _savePlannerSelections() async {
+    try {
+      final data = <String, Map<String, String>>{};
+      for (final entry in _plannerSelections.entries) {
+        data[entry.key] = {
+          for (final meal in entry.value.entries) meal.key: meal.value.id,
+        };
+      }
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_plannerStorageKey, jsonEncode(data));
+    } catch (_) {
+      // Selections remain available for the current session if storage fails.
+    }
   }
 
   Future<void> _loadPantry() async {
