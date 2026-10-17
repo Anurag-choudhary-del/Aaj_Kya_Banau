@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../models/pantry_item.dart';
 import '../state/kitchen_store.dart';
@@ -15,9 +16,87 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _controller = TextEditingController();
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _listening = false;
+  bool _voiceTranscript = false;
+
+  Future<void> _listenForPantryItems(KitchenStore store) async {
+    final available = await _speech.initialize(
+      onStatus: (status) {
+        if (mounted) setState(() => _listening = status == 'listening');
+      },
+      onError: (_) {
+        if (mounted) {
+          setState(() => _listening = false);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(store.language == 'Hindi'
+                ? 'आवाज़ नहीं समझ आई। फिर कोशिश करें या टाइप करें।'
+                : store.language == 'Hinglish'
+                    ? 'Voice samajh nahi aayi. Dobara try karo ya type karo.'
+                    : 'Could not hear that. Try again or type the item.'),
+          ));
+        }
+      },
+    );
+    if (!available) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(store.language == 'Hindi'
+            ? 'इस डिवाइस पर voice input उपलब्ध नहीं है।'
+            : store.language == 'Hinglish'
+                ? 'Is device par voice input available nahi hai.'
+                : 'Voice input is unavailable on this device.'),
+      ));
+      return;
+    }
+    await _speech.listen(
+      localeId: store.language == 'Hindi' ? 'hi_IN' : 'en_IN',
+      listenFor: const Duration(seconds: 20),
+      pauseFor: const Duration(seconds: 3),
+      onResult: (result) {
+        if (!mounted || result.recognizedWords.trim().isEmpty) return;
+        setState(() {
+          _controller.text = result.recognizedWords;
+          _controller.selection = TextSelection.collapsed(offset: _controller.text.length);
+          _voiceTranscript = true;
+        });
+        if (result.finalResult) {
+          _speech.stop();
+          setState(() => _listening = false);
+        }
+      },
+    );
+    if (mounted) setState(() => _listening = true);
+  }
+
+  void _submitPantryText(KitchenStore store) {
+    final value = _controller.text.trim();
+    if (value.isEmpty) return;
+    if (_voiceTranscript) {
+      final count = store.addPantryItemsFromSpeech(value);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(count > 0
+            ? (store.language == 'Hindi'
+                ? '$count पहचाने गए सामान pantry में जोड़े गए।'
+                : store.language == 'Hinglish'
+                    ? '$count pehchane gaye items pantry mein add hue.'
+                    : 'Added $count recognized item(s) to pantry.')
+            : (store.language == 'Hindi'
+                ? 'कोई सामान पहचान नहीं आया। नाम टाइप करके जोड़ें।'
+                : store.language == 'Hinglish'
+                    ? 'Koi item samajh nahi aaya. Naam type karke add karo.'
+                    : 'No known ingredients recognized. Please type the item name.')),
+      ));
+    } else {
+      store.addManualItem(value);
+    }
+    _controller.clear();
+    setState(() => _voiceTranscript = false);
+  }
 
   @override
   void dispose() {
+    _speech.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -106,21 +185,26 @@ class _HomeScreenState extends State<HomeScreen> {
           TextField(
             controller: _controller,
             textInputAction: TextInputAction.done,
-            onSubmitted: (value) {
-              store.addManualItem(value);
-              _controller.clear();
-            },
+            onSubmitted: (_) => _submitPantryText(store),
             decoration: InputDecoration(
               hintText: store.t('Add an item…  e.g. Methi'),
               filled: true,
               fillColor: Colors.white,
               prefixIcon: const Icon(Icons.add_rounded),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.send_rounded, color: AppColors.saffron),
-                onPressed: () {
-                  store.addManualItem(_controller.text);
-                  _controller.clear();
-                },
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: _listening ? 'Listening' : 'Add by voice',
+                    icon: Icon(_listening ? Icons.mic : Icons.mic_none,
+                        color: _listening ? AppColors.missing : AppColors.saffron),
+                    onPressed: _listening ? () => _speech.stop() : () => _listenForPantryItems(store),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.send_rounded, color: AppColors.saffron),
+                    onPressed: () => _submitPantryText(store),
+                  ),
+                ],
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
