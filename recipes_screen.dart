@@ -17,13 +17,13 @@ class RecipesScreen extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
         children: [
-          const Text(
-            'Recipe suggestions',
+          Text(
+            store.t('Recipe suggestions'),
             style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Ranked by what you already have. Missing ingredients show in red.',
+          Text(
+            store.t('Ranked by what you already have. Missing ingredients show in red.'),
             style: TextStyle(color: AppColors.muted),
           ),
           const SizedBox(height: 18),
@@ -67,7 +67,7 @@ class _RecipeCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      recipe.name,
+                      store.displayName(recipe.name),
                       style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
                     ),
                     const SizedBox(height: 2),
@@ -90,7 +90,7 @@ class _RecipeCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          const Text('Ingredients', style: TextStyle(fontWeight: FontWeight.w700)),
+          Text(store.t('Ingredients'), style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -115,12 +115,12 @@ class _RecipeCard extends StatelessWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                'Added ${match.missing.length} missing item(s) to cart',
+                                store.language == 'Hindi' ? '${match.missing.length} बाकी सामान कार्ट में जोड़े' : store.language == 'Hinglish' ? '${match.missing.length} missing items cart mein add kiye' : 'Added ${match.missing.length} missing item(s) to cart',
                               ),
                             ),
                           );
                         },
-                  child: const Text('Add missing to cart'),
+                  child: Text(store.t('Add missing to cart')),
                 ),
               ),
               const SizedBox(width: 10),
@@ -251,7 +251,7 @@ class _IngredientChip extends StatelessWidget {
         ),
       ),
       child: Text(
-        '${ingredient.emoji}  ${ingredient.name}${ingredient.amount.isEmpty ? '' : ' · ${ingredient.amount}'}',
+        '${ingredient.emoji}  ${context.watch<KitchenStore>().displayName(ingredient.name)}${ingredient.amount.isEmpty ? '' : ' · ${ingredient.amount}'}',
         style: TextStyle(
           color: missing ? AppColors.missing : AppColors.have,
           fontWeight: FontWeight.w700,
