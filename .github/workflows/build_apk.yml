@@ -63,7 +63,7 @@ jobs:
 
       - name: Build release APK
         env:
-          AI_API_BASE_URL: ${{ vars.AI_API_BASE_URL }}
+          AI_API_BASE_URL: ${{ vars.AI_API_BASE_URL || 'https://aaj-kya-banau-ai.anuragchoudhary7816.workers.dev' }}
         run: flutter build apk --release --no-tree-shake-icons --dart-define=AI_API_BASE_URL="$AI_API_BASE_URL"
 
       - name: Upload APK
