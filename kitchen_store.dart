@@ -426,6 +426,7 @@ class KitchenStore extends ChangeNotifier {
               emoji: value['emoji'] is String ? value['emoji'] as String : '🧺',
               quantity: value['quantity'] is int ? value['quantity'] as int : 1,
               unit: value['unit'] is String ? value['unit'] as String : 'pcs',
+              displayName: value['displayName'] is String ? value['displayName'] as String : null,
             ));
           }
         }
@@ -442,7 +443,7 @@ class KitchenStore extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_pantryStorageKey, jsonEncode(_pantry.map((item) => {
         'id': item.id, 'name': item.name, 'emoji': item.emoji,
-        'quantity': item.quantity, 'unit': item.unit,
+        'quantity': item.quantity, 'unit': item.unit, 'displayName': item.displayName,
       }).toList()));
     } catch (_) {
       // Pantry still works for this session if local storage is unavailable.
@@ -470,7 +471,10 @@ class KitchenStore extends ChangeNotifier {
     final existing = _pantry.indexWhere((p) => p.key == item.key);
     if (existing >= 0) {
       final current = _pantry[existing];
-      _pantry[existing] = current.copyWith(quantity: current.quantity + item.quantity);
+      _pantry[existing] = current.copyWith(
+        quantity: current.quantity + item.quantity,
+        displayName: item.displayName ?? current.displayName,
+      );
     } else {
       _pantry.insert(0, item);
     }
