@@ -25,12 +25,14 @@ class KitchenStore extends ChangeNotifier {
   KitchenStore() {
     unawaited(_loadPantry());
     unawaited(_loadPlannerSelections());
+    unawaited(_loadLanguage());
     ensureMonthlyPlan(DateTime.now());
   }
 
   static const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   static const _pantryStorageKey = 'aaj_kya_banau_pantry_v1';
   static const _plannerStorageKey = 'aaj_kya_banau_planner_v1';
+  static const _languageStorageKey = 'aaj_kya_banau_language_v1';
 
   final _uuid = const Uuid();
   final List<PantryItem> _pantry = [];
@@ -39,6 +41,167 @@ class KitchenStore extends ChangeNotifier {
   final Map<String, Map<String, Recipe>> _plannerSelections = {};
   bool eveningReminder = false;
   bool _pantryLoaded = false;
+  String language = 'English';
+
+  static const Map<String, Map<String, String>> _translations = {
+    'Hindi': {
+      'Pantry': 'रसोई',
+      'Recipes': 'रेसिपी',
+      'Planner': 'मील प्लानर',
+      'Cart': 'कार्ट',
+      'Namaste 👋': 'नमस्ते 👋',
+      'Aaj kya banau?': 'आज क्या बनाऊँ?',
+      'Your pantry': 'आपकी रसोई',
+      'Camera scan': 'कैमरा से स्कैन',
+      'Photo upload': 'फोटो चुनें',
+      'Scan or upload photo': 'फोटो स्कैन करें या चुनें',
+      'Recipe suggestions': 'रेसिपी सुझाव',
+      'Ranked by what you already have. Missing ingredients show in red.': 'आपके पास मौजूद सामान के हिसाब से सुझाव। कम सामग्री लाल रंग में दिखेगी।',
+      'Ingredients': 'सामग्री',
+      'Add missing to cart': 'बाकी सामान कार्ट में डालें',
+      'Plan': 'प्लान करें',
+      'Monthly meal planner': 'महीने का मील प्लानर',
+      'Breakfast': 'नाश्ता',
+      'Lunch': 'दोपहर का खाना',
+      'Dinner': 'रात का खाना',
+      'Snacks': 'स्नैक्स',
+      'Choose this meal': 'यह खाना चुनें',
+      'Need to buy': 'खरीदना है',
+      'In pantry': 'रसोई में है',
+      'Grocery cart': 'किराना कार्ट',
+      'Estimated total': 'अनुमानित कुल',
+      'Cart is empty.\nAdd missing items from the Recipes tab.': 'कार्ट खाली है।\nरेसिपी टैब से बाकी सामान जोड़ें।',
+      'Evening reminder': 'शाम का रिमाइंडर',
+      'Add an item…  e.g. Methi': 'सामान जोड़ें… जैसे मेथी',
+      'Pantry is empty — scan or add items': 'रसोई खाली है — स्कैन करें या सामान जोड़ें',
+      'Potato': 'आलू',
+      'Onion': 'प्याज़',
+      'Tomato': 'टमाटर',
+      'Rice': 'चावल',
+      'Atta': 'आटा',
+      'Eggs': 'अंडे',
+      'Paneer': 'पनीर',
+      'Coriander': 'धनिया',
+      'Cumin': 'जीरा',
+      'Salt': 'नमक',
+      'Oil': 'तेल',
+      'Garlic': 'लहसुन',
+      'Ginger': 'अदरक',
+      'Green chilli': 'हरी मिर्च',
+      'Cauliflower': 'फूलगोभी',
+      'Cabbage': 'पत्ता गोभी',
+      'Carrot': 'गाजर',
+      'Peas': 'मटर',
+      'Lemon': 'नींबू',
+      'Curd': 'दही',
+      'Butter': 'मक्खन',
+      'Turmeric': 'हल्दी',
+      'Moong dal': 'मूंग दाल',
+      'Chana dal': 'चना दाल',
+      'Black chickpeas': 'काला चना',
+      'Soya chunks': 'सोया चंक्स',
+      'Lauki': 'लौकी',
+      'Capsicum': 'शिमला मिर्च',
+      'Cucumber': 'खीरा',
+      'Brinjal': 'बैंगन',
+      'Palak': 'पालक',
+      'Banana': 'केला',
+      'Bread': 'ब्रेड',
+    },
+    'Hinglish': {
+      'Pantry': 'Rasoi',
+      'Recipes': 'Recipes',
+      'Planner': 'Meal Planner',
+      'Cart': 'Grocery Cart',
+      'Namaste 👋': 'Namaste 👋',
+      'Aaj kya banau?': 'Aaj kya banau?',
+      'Your pantry': 'Tumhari rasoi',
+      'Camera scan': 'Camera se scan',
+      'Photo upload': 'Gallery se photo',
+      'Scan or upload photo': 'Photo scan karo ya upload karo',
+      'Recipe suggestions': 'Recipe suggestions',
+      'Ranked by what you already have. Missing ingredients show in red.': 'Jo samaan ghar mein hai uske hisaab se recipes. Missing items red mein.',
+      'Ingredients': 'Ingredients / Samagri',
+      'Add missing to cart': 'Missing samaan cart mein daalo',
+      'Plan': 'Plan karo',
+      'Monthly meal planner': 'Monthly meal planner',
+      'Breakfast': 'Nashta',
+      'Lunch': 'Lunch',
+      'Dinner': 'Dinner',
+      'Snacks': 'Snacks',
+      'Choose this meal': 'Ye meal choose karo',
+      'Need to buy': 'Kharidna hai',
+      'In pantry': 'Ghar mein hai',
+      'Grocery cart': 'Grocery cart',
+      'Estimated total': 'Approx total',
+      'Cart is empty.\nAdd missing items from the Recipes tab.': 'Cart khaali hai.\nRecipes tab se missing items add karo.',
+      'Evening reminder': 'Shaam ka reminder',
+      'Add an item…  e.g. Methi': 'Samaan add karo… jaise Methi',
+      'Pantry is empty — scan or add items': 'Rasoi khaali hai — scan karo ya items add karo',
+      'Potato': 'Aloo',
+      'Onion': 'Pyaaz',
+      'Tomato': 'Tamatar',
+      'Rice': 'Chawal',
+      'Atta': 'Aata',
+      'Eggs': 'Ande',
+      'Paneer': 'Paneer',
+      'Coriander': 'Dhaniya',
+      'Cumin': 'Jeera',
+      'Salt': 'Namak',
+      'Oil': 'Tel',
+      'Garlic': 'Lehsun',
+      'Ginger': 'Adrak',
+      'Green chilli': 'Hari mirch',
+      'Cauliflower': 'Phool gobhi',
+      'Cabbage': 'Patta gobhi',
+      'Carrot': 'Gajar',
+      'Peas': 'Matar',
+      'Lemon': 'Nimbu',
+      'Curd': 'Dahi',
+      'Butter': 'Butter',
+      'Turmeric': 'Haldi',
+      'Moong dal': 'Moong dal',
+      'Chana dal': 'Chana dal',
+      'Black chickpeas': 'Kala chana',
+      'Soya chunks': 'Soya chunks',
+      'Lauki': 'Lauki',
+      'Capsicum': 'Shimla mirch',
+      'Cucumber': 'Kheera',
+      'Brinjal': 'Baingan',
+      'Palak': 'Palak',
+      'Banana': 'Kela',
+      'Bread': 'Bread',
+    },
+  };
+
+  String t(String value) => _translations[language]?[value] ?? value;
+
+  String displayName(String value) => t(value);
+
+  Future<void> _loadLanguage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(_languageStorageKey);
+      if (saved == 'English' || saved == 'Hindi' || saved == 'Hinglish') {
+        language = saved;
+        notifyListeners();
+      }
+    } catch (_) {
+      // English remains the safe default if preferences are unavailable.
+    }
+  }
+
+  Future<void> setLanguage(String value) async {
+    if (!['English', 'Hindi', 'Hinglish'].contains(value) || language == value) return;
+    language = value;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_languageStorageKey, value);
+    } catch (_) {
+      // The selected language remains active for this session.
+    }
+  }
 
   List<PantryItem> get pantry => List.unmodifiable(_pantry);
   List<GroceryItem> get cart => List.unmodifiable(_cart);
