@@ -41,10 +41,6 @@ void main() {
     }
   });
 
-}
-
-
-void mainPackSizeTests() {
   test('grocery pack size is included in line total', () {
     const potato = GroceryItem(
       id: 'potato',
