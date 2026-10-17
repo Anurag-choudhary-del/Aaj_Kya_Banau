@@ -30,7 +30,7 @@ void main() {
     await tester.tap(find.text('Cart'));
     await tester.pumpAndSettle();
     expect(find.text('Grocery cart'), findsOneWidget);
-    expect(find.text('Blinkit Delivery'), findsOneWidget);
+    expect(find.text('Blinkit (not connected)'), findsOneWidget);
   });
 
   test('planner offers five choices for every meal category', () {
