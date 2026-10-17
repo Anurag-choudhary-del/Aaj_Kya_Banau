@@ -89,6 +89,20 @@ class _CartTile extends StatelessWidget {
                   '₹${item.price}/${item.unitLabel} estimated · line total ₹${item.lineTotal}',
                   style: const TextStyle(color: AppColors.missing, fontSize: 12, fontWeight: FontWeight.w600),
                 ),
+                if (item.unit == 'kg')
+                  DropdownButton<int>(
+                    value: item.packSize,
+                    isDense: true,
+                    underline: const SizedBox.shrink(),
+                    items: const [
+                      DropdownMenuItem(value: 1, child: Text('Pack: 1 kg')),
+                      DropdownMenuItem(value: 5, child: Text('Pack: 5 kg')),
+                      DropdownMenuItem(value: 10, child: Text('Pack: 10 kg')),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) store.changeCartPackSize(item.id, value);
+                    },
+                  ),
               ],
             ),
           ),
@@ -99,8 +113,10 @@ class _CartTile extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
-              '${item.quantity} ${item.unitLabel}',
-              style: const TextStyle(fontWeight: FontWeight.w800),
+              item.unit == 'kg'
+                  ? '${item.quantity} × ${item.packSize} kg'
+                  : '${item.quantity} ${item.unitLabel}',
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
             ),
           ),
           _QtyButton(
