@@ -18,7 +18,7 @@ class RecipesScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
         children: [
           const Text(
-            'AI recipe suggestions',
+            'Recipe suggestions',
             style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
