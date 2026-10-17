@@ -81,7 +81,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
           for (var day = 1; day <= totalDays; day++)
             _DayMealCard(
               date: DateTime(_visibleMonth.year, _visibleMonth.month, day),
-              monthName: _monthName(_visibleMonth),
+              monthName: _monthName(_visibleMonth, store.language),
               onSelect: (category, recipe) => _showRecipeDetails(context, DateTime(_visibleMonth.year, _visibleMonth.month, day), category, recipe),
             ),
           const SizedBox(height: 8),
