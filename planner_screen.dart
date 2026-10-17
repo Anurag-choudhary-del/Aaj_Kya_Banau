@@ -38,13 +38,13 @@ class _PlannerScreenState extends State<PlannerScreen> {
         children: [
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 4),
-            child: Text('Monthly meal planner', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
+            child: Text(store.t('Monthly meal planner'), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
           ),
           const SizedBox(height: 6),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
-              '$totalDays days · breakfast, lunch, dinner and snacks · 5 options per category each day',
+              store.language == 'Hindi' ? '${totalDays} दिन · नाश्ता, दोपहर का खाना, रात का खाना और स्नैक्स · हर श्रेणी में 5 विकल्प' : store.language == 'Hinglish' ? '${totalDays} days · nashta, lunch, dinner aur snacks · har category mein 5 options' : '${totalDays} days · breakfast, lunch, dinner and snacks · 5 options per category each day',
               style: const TextStyle(color: AppColors.muted),
             ),
           ),
@@ -67,8 +67,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
               store.setEveningReminder(value);
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Text(value
-                  ? 'Reminder toggle on. Actual scheduled notifications abhi configure nahi hain.'
-                  : 'Evening reminder turned off'),
+                  ? 'Reminder on hai. Scheduled notifications abhi configure nahi hain.'
+                  : 'Evening reminder off'),
               ));
             },
           ),
@@ -105,11 +105,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${recipe.emoji}  ${recipe.name}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                Text('${recipe.emoji}  ${store.displayName(recipe.name)}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
-                Text('${recipe.minutes} min · $category · ${recipe.tagline}', style: const TextStyle(color: AppColors.muted)),
+                Text('${recipe.minutes} min · ${store.t(category)} · ${recipe.tagline}', style: const TextStyle(color: AppColors.muted)),
                 const SizedBox(height: 16),
-                const Text('Ingredients', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                Text(store.t('Ingredients'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 8),
                 for (final ingredient in recipe.ingredients)
                   Padding(
@@ -117,9 +117,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     child: Row(children: [
                       Text(ingredient.emoji, style: const TextStyle(fontSize: 20)),
                       const SizedBox(width: 10),
-                      Expanded(child: Text('${ingredient.name}${ingredient.amount.isEmpty ? '' : ' · ${ingredient.amount}'}')),
+                      Expanded(child: Text('${store.displayName(ingredient.name)}${ingredient.amount.isEmpty ? '' : ' · ${ingredient.amount}'}')),
                       Text(
-                        match.missing.any((item) => item.key == ingredient.key) ? 'Need to buy' : 'In pantry',
+                        match.missing.any((item) => item.key == ingredient.key) ? store.t('Need to buy') : store.t('In pantry'),
                         style: TextStyle(
                           color: match.missing.any((item) => item.key == ingredient.key) ? AppColors.missing : AppColors.have,
                           fontSize: 12,
@@ -138,7 +138,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       );
                     },
                     icon: const Icon(Icons.shopping_cart_outlined),
-                    label: const Text('Add missing to cart'),
+                    label: Text(store.t('Add missing to cart')),
                   )),
                   const SizedBox(width: 10),
                   Expanded(child: FilledButton(
@@ -149,7 +149,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         SnackBar(content: Text('${recipe.name} selected for $category on ${date.day}/${date.month}')),
                       );
                     },
-                    child: const Text('Choose this meal'),
+                    child: Text(store.t('Choose this meal')),
                   )),
                 ]),
               ],
@@ -184,7 +184,7 @@ class _ReminderCard extends StatelessWidget {
         const Expanded(child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Evening reminder', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            Text(context.watch<KitchenStore>().t('Evening reminder'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
             SizedBox(height: 2),
             Text('Reminder toggle (scheduled notifications not yet enabled)',
               style: TextStyle(color: AppColors.muted, fontSize: 12)),
@@ -241,15 +241,15 @@ class _DayMealCard extends StatelessWidget {
                   tilePadding: const EdgeInsets.symmetric(horizontal: 14),
                   childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
                   leading: Text(_categoryEmoji(category), style: const TextStyle(fontSize: 22)),
-                  title: Text(category, style: const TextStyle(fontWeight: FontWeight.w800)),
-                  subtitle: Text('${selected.emoji} ${selected.name}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                  title: Text(store.t(category), style: const TextStyle(fontWeight: FontWeight.w800)),
+                  subtitle: Text('${selected.emoji} ${store.displayName(selected.name)}', maxLines: 1, overflow: TextOverflow.ellipsis),
                   children: [
                     for (final recipe in options)
                       ListTile(
                         dense: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                         leading: Text(recipe.emoji, style: const TextStyle(fontSize: 23)),
-                        title: Text(recipe.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        title: Text(store.displayName(recipe.name), style: const TextStyle(fontWeight: FontWeight.w600)),
                         subtitle: Text('${recipe.minutes} min · tap for ingredients'),
                         trailing: selected.id == recipe.id ? const Icon(Icons.check_circle, color: AppColors.have) : const Icon(Icons.chevron_right),
                         onTap: () => onSelect(category, recipe),
