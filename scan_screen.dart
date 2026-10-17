@@ -45,11 +45,12 @@ class _ScanScreenState extends State<ScanScreen> {
         _error = null;
         _loading = true;
       });
+      final language = context.read<KitchenStore>().language;
       final bytes = await image.readAsBytes();
       final result = await IngredientRecognitionService().recognize(
         base64Encode(bytes),
         image.mimeType ?? 'image/jpeg',
-        language: context.read<KitchenStore>().language,
+        language: language,
       );
       if (!mounted) return;
       setState(() {
