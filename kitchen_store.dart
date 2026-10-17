@@ -25,9 +25,7 @@ class RecipeMatch {
 class KitchenStore extends ChangeNotifier {
   KitchenStore() {
     unawaited(_loadPantry());
-    unawaited(_loadPlannerSelections());
-    unawaited(_loadLanguage());
-    unawaited(_loadReminderSetting());
+    unawaited(_loadInitialSettings());
     ensureMonthlyPlan(DateTime.now());
   }
 
@@ -345,13 +343,20 @@ class KitchenStore extends ChangeNotifier {
     return aliases[key] ?? key;
   }
 
+  Future<void> _loadInitialSettings() async {
+    await _loadPlannerSelections();
+    await _loadLanguage();
+    await _loadReminderSetting();
+    if (eveningReminder) await _refreshMealReminders();
+    notifyListeners();
+  }
+
   Future<void> _loadLanguage() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final saved = prefs.getString(_languageStorageKey);
       if (saved == 'English' || saved == 'Hindi' || saved == 'Hinglish') {
         language = saved!;
-        if (eveningReminder) await _refreshMealReminders();
         notifyListeners();
       }
     } catch (_) {
@@ -474,7 +479,6 @@ class KitchenStore extends ChangeNotifier {
     } catch (_) {
       // Ignore malformed saved planner data and use generated suggestions.
     }
-    if (eveningReminder) await _refreshMealReminders();
     notifyListeners();
   }
 
@@ -673,7 +677,6 @@ class KitchenStore extends ChangeNotifier {
     } catch (_) {
       eveningReminder = false;
     }
-    if (eveningReminder) await _refreshMealReminders();
     notifyListeners();
   }
 
