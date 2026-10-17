@@ -94,7 +94,7 @@ class _CartTile extends StatelessWidget {
                     value: item.packSize,
                     isDense: true,
                     underline: const SizedBox.shrink(),
-                    items: const [
+                    items: [
                       DropdownMenuItem(value: 1, child: Text(store.t('Pack: 1 kg'))),
                       DropdownMenuItem(value: 5, child: Text(store.t('Pack: 5 kg'))),
                       DropdownMenuItem(value: 10, child: Text(store.t('Pack: 10 kg'))),
