@@ -4,10 +4,11 @@ Flutter kitchen companion with a user-managed pantry, photo-based ingredient rec
 
 ## Features
 
+- **Language:** select English, Hinglish, or Hindi from the Pantry screen; common ingredient names and key screen labels are translated while recipe matching keeps canonical ingredient names.
 - **Pantry:** starts empty on a fresh install; manually added and confirmed photo-recognized items are saved locally.
 - **Camera / Photo Upload:** take a photo with the device camera or select an image from the gallery. The AI result is shown for review; only selected items are added.
 - **Monthly Planner:** shows Breakfast, Lunch, Dinner, and Snacks for every day, with five rotating options per category. Tap an option to inspect ingredients, add missing items to the cart, and select it. Selections are saved locally.
-- **Grocery Cart:** quantity is expressed in a unit (such as kg, L, pack, or pcs), with an estimated unit price and line total. Estimates are not live Blinkit prices. Blinkit checkout is not connected, so the app does not place orders.
+- **Grocery Cart:** quantity is expressed in a unit (such as kg, L, pack, or pcs), with an estimated unit price and line total. Kilogram-based items offer 1 kg, 5 kg, and 10 kg pack sizes, and totals are recalculated for the selected pack. Estimates are not live Blinkit prices. Blinkit checkout is not connected, so the app does not place orders.
 - **Recipes and Cart:** recipe matching uses the pantry contents; missing ingredients can be added to the grocery cart.
 
 ## AI recognition setup (required for photo scanning)
@@ -22,7 +23,7 @@ In GitHub repository **Settings → Secrets and variables → Actions → Secret
 
 The workflow `.github/workflows/deploy_ai_worker.yml` deploys `worker/` and configures the OpenAI key as a Worker secret. Never commit an actual API key into source files, Dart code, or workflow YAML.
 
-After the Worker deploys, its URL will look like `https://aaj-kya-banau-ai.<your-workers-subdomain>.workers.dev`. In **Settings → Secrets and variables → Actions → Variables**, create a repository variable named `AI_API_BASE_URL` and set it to that full HTTPS URL (without `/recognize`). Push or manually run the **Build Flutter APK** workflow again so the URL is compiled into the APK.
+After the Worker deploys, its URL will look like `https://aaj-kya-banau-ai.<your-workers-subdomain>.workers.dev`. The build workflow has a configured fallback URL; if your Worker uses a different URL, set the repository variable `AI_API_BASE_URL` under **Settings → Secrets and variables → Actions → Variables** to the full HTTPS Worker URL (without `/recognize`). Build the APK again so the URL is compiled into it.
 
 Test the deployed Worker health endpoint by opening `<AI_API_BASE_URL>/health`; it should return `{"ok":true}`.
 
