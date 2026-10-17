@@ -271,6 +271,13 @@ class KitchenStore extends ChangeNotifier {
     if (notify) notifyListeners();
   }
 
+  void changeCartPackSize(String id, int packSize) {
+    final index = _cart.indexWhere((item) => item.id == id);
+    if (index < 0 || _cart[index].unit != 'kg' || ![1, 5, 10].contains(packSize)) return;
+    _cart[index] = _cart[index].copyWith(packSize: packSize);
+    notifyListeners();
+  }
+
   void changeCartQty(String id, int delta) {
     final index = _cart.indexWhere((item) => item.id == id);
     if (index < 0) return;
