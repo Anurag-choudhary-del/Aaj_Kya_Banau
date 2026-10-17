@@ -185,15 +185,15 @@ class KitchenStore extends ChangeNotifier {
       'potato': 30, 'onion': 40, 'tomato': 40, 'capsicum': 60,
       'palak': 30, 'cauliflower': 40, 'cabbage': 35, 'carrot': 50,
       'peas': 80, 'brinjal': 40, 'lauki': 35, 'cucumber': 35,
-      'lemon': 80, 'ginger': 120, 'garlic': 160,
+      'lemon': 80,
       'rice': 60, 'toor dal': 150, 'moong dal': 130, 'chana dal': 100,
       'besan': 100, 'atta': 45, 'sugar': 45,
     };
-    const piecePrices = <String, int>{'eggs': 8, 'banana': 8, 'coriander': 20};
+    const piecePrices = <String, int>{'eggs': 8, 'banana': 8};
     const packPrices = <String, int>{
       'turmeric': 35, 'salt': 25, 'cumin': 45, 'mustard seeds': 35,
       'chilli powder': 45, 'garam masala': 60, 'cream': 35,
-      'butter': 60, 'paneer': 90, 'curd': 35,
+      'butter': 60, 'paneer': 90, 'curd': 35, 'ginger': 30, 'garlic': 30,
       'green chilli': 20, 'coconut': 40,
     };
     if (kgPrices.containsKey(key)) return (unit: 'kg', price: kgPrices[key]!);
