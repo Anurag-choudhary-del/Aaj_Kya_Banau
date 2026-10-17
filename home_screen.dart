@@ -240,7 +240,7 @@ class _PantryTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    context.watch<KitchenStore>().displayName(item.name),
+                    item.displayName ?? context.watch<KitchenStore>().displayName(item.name),
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                   ),
                   Text(
