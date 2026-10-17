@@ -84,9 +84,10 @@ jobs:
                       raise SystemExit("Could not find compileOptions in build.gradle.kts")
                   gradle = gradle.replace("compileOptions {", "compileOptions {\n        isCoreLibraryDesugaringEnabled = true", 1)
               if "coreLibraryDesugaring(" not in gradle:
-                  if "dependencies {" not in gradle:
-                      raise SystemExit("Could not find dependencies in build.gradle.kts")
-                  gradle = gradle.replace("dependencies {", 'dependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")', 1)
+                  if "dependencies {" in gradle:
+                      gradle = gradle.replace("dependencies {", 'dependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")', 1)
+                  else:
+                      gradle += '\n\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")\n}\n'
           elif groovy.exists():
               gradle_path = groovy
               gradle = groovy.read_text()
@@ -95,9 +96,10 @@ jobs:
                       raise SystemExit("Could not find compileOptions in build.gradle")
                   gradle = gradle.replace("compileOptions {", "compileOptions {\n        coreLibraryDesugaringEnabled true", 1)
               if "coreLibraryDesugaring " not in gradle:
-                  if "dependencies {" not in gradle:
-                      raise SystemExit("Could not find dependencies in build.gradle")
-                  gradle = gradle.replace("dependencies {", "dependencies {\n    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'", 1)
+                  if "dependencies {" in gradle:
+                      gradle = gradle.replace("dependencies {", "dependencies {\n    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'", 1)
+                  else:
+                      gradle += "\n\ndependencies {\n    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'\n}\n"
           else:
               raise SystemExit("Could not find app Gradle build file")
           gradle_path.write_text(gradle)
