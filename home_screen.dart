@@ -110,11 +110,32 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.cream,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: AppColors.saffron.withValues(alpha: 0.35)),
+                ),
+                child: const Icon(Icons.soup_kitchen_rounded, size: 29, color: AppColors.ink),
+              ),
+              const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  store.t('Namaste 👋'),
-                  style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w600),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Kitchen Saheli', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: AppColors.ink)),
+                    const SizedBox(height: 1),
+                    const Text('Snap. Plan. Cook. Order!', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.saffron)),
+                    const SizedBox(height: 3),
+                    Text(
+                      store.t('Namaste 👋'),
+                      style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w600),
+                    ),
+                  ],
                 ),
               ),
               DropdownButton<String>(
