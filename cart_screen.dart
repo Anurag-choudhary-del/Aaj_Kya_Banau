@@ -26,7 +26,7 @@ class CartScreen extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              'Missing ingredients collected from recipes',
+              'Quantities and indicative local-market estimates',
               style: TextStyle(color: AppColors.muted),
             ),
           ),
@@ -86,7 +86,7 @@ class _CartTile extends StatelessWidget {
               children: [
                 Text(item.name, style: const TextStyle(fontWeight: FontWeight.w800)),
                 Text(
-                  '₹${item.price} · missing from pantry',
+                  '₹${item.price}/${item.unitLabel} estimated · line total ₹${item.lineTotal}',
                   style: const TextStyle(color: AppColors.missing, fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ],
@@ -99,7 +99,7 @@ class _CartTile extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
-              '${item.quantity}',
+              '${item.quantity} ${item.unitLabel}',
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
@@ -188,47 +188,38 @@ class _CheckoutBar extends StatelessWidget {
   }
 
   Future<void> _placeBlinkitOrder(BuildContext context) async {
-    final store = context.read<KitchenStore>();
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('⚡', style: TextStyle(fontSize: 40)),
-              const SizedBox(height: 8),
-              const Text(
-                'Blinkit Delivery',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('⚡', style: TextStyle(fontSize: 40)),
+            const SizedBox(height: 8),
+            const Text(
+              'Blinkit ordering is not connected',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'This cart currently uses estimated local-market prices. It cannot send items to Blinkit or place an order, and no payment/order will be made from this screen. Open Blinkit separately to check live prices and add items.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.muted),
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Got it'),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Your missing groceries (₹${store.cartTotal}) will arrive in 10 minutes. This is a demo checkout.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.muted),
-              ),
-              const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: const Color(0xFF0D9B4D)),
-                  onPressed: () {
-                    store.clearCart();
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Order placed with Blinkit. Arriving in 10 min!')),
-                    );
-                  },
-                  child: const Text('Confirm order'),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
