@@ -16,9 +16,14 @@ class PlannerScreen extends StatefulWidget {
 class _PlannerScreenState extends State<PlannerScreen> {
   DateTime _visibleMonth = DateTime(DateTime.now().year, DateTime.now().month);
 
-  String _monthName(DateTime date) {
-    const months = ['January', 'February', 'March', 'April', 'May', 'June',
+  String _monthName(DateTime date, String language) {
+    const english = ['January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'];
+    const hindi = ['जनवरी', 'फ़रवरी', 'मार्च', 'अप्रैल', 'मई', 'जून',
+      'जुलाई', 'अगस्त', 'सितंबर', 'अक्टूबर', 'नवंबर', 'दिसंबर'];
+    const hinglish = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+    final months = language == 'Hindi' ? hindi : language == 'Hinglish' ? hinglish : english;
     return '${months[date.month - 1]} ${date.year}';
   }
 
@@ -54,7 +59,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
             child: Row(children: [
               IconButton(onPressed: () => _changeMonth(-1), icon: const Icon(Icons.chevron_left)),
-              Expanded(child: Text(_monthName(_visibleMonth),
+              Expanded(child: Text(_monthName(_visibleMonth, store.language),
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18))),
               IconButton(onPressed: () => _changeMonth(1), icon: const Icon(Icons.chevron_right)),
