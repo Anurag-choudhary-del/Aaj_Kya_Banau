@@ -42,6 +42,8 @@ class KitchenStore extends ChangeNotifier {
   final Map<String, Map<String, Recipe>> _plansByMonth = {};
   final Map<String, Map<String, Recipe>> _plannerSelections = {};
   final Set<String> _noneSelections = <String>{};
+  final Set<String> _voiceRecipeIngredients = <String>{};
+  String voiceRecipePrompt = '';
   bool eveningReminder = false;
   bool _pantryLoaded = false;
   String language = 'English';
@@ -550,19 +552,100 @@ class KitchenStore extends ChangeNotifier {
     return _pantry.any((item) => _canonicalIngredientKey(item.name) == wanted);
   }
 
+  bool _hasRecipeIngredient(String name) {
+    final wanted = _canonicalIngredientKey(name);
+    return hasIngredient(name) || _voiceRecipeIngredients.contains(wanted);
+  }
+
   RecipeMatch matchFor(Recipe recipe) {
     final have = <RecipeIngredient>[];
     final missing = <RecipeIngredient>[];
     for (final ingredient in recipe.ingredients) {
-      (hasIngredient(ingredient.name) ? have : missing).add(ingredient);
+      (_hasRecipeIngredient(ingredient.name) ? have : missing).add(ingredient);
     }
     return RecipeMatch(recipe: recipe, have: have, missing: missing);
   }
 
   List<RecipeMatch> get suggestions {
-    final matches = KitchenCatalog.recipes.map(matchFor).toList()
-      ..sort((a, b) => b.percent.compareTo(a.percent));
+    // Never show 0% recipes for an empty pantry. A spoken recipe query is a
+    // temporary ingredient set and does not silently change the saved pantry.
+    if (_pantry.isEmpty && _voiceRecipeIngredients.isEmpty) return const [];
+    final matches = KitchenCatalog.recipes
+        .map(matchFor)
+        .where((match) => match.have.isNotEmpty)
+        .toList()
+      ..sort((a, b) {
+        final byCoverage = b.percent.compareTo(a.percent);
+        return byCoverage != 0 ? byCoverage : a.recipe.name.compareTo(b.recipe.name);
+      });
     return matches;
+  }
+
+  Set<String> _recognizedIngredientKeys(String text) {
+    final normalized = text.toLowerCase().replaceAll(RegExp(r'[^\\p{L}\\p{N}\\s-]', unicode: true), ' ');
+    final result = <String>{};
+    final allNames = <String>{
+      for (final recipe in KitchenCatalog.recipes)
+        for (final ingredient in recipe.ingredients) ingredient.name,
+      'Paneer', 'Potato', 'Onion', 'Tomato', 'Cauliflower', 'Coriander',
+      'Cumin', 'Salt', 'Oil', 'Garlic', 'Ginger', 'Green chilli', 'Peas',
+      'Lemon', 'Atta', 'Rice', 'Eggs', 'Curd', 'Coconut', 'Besan',
+      'Poha', 'Sooji', 'Dalia', 'Rajma', 'Chickpeas', 'Bhindi', 'Ghee',
+      'Makhana', 'Puffed rice', 'Sprouts', 'Sweet corn', 'Peanuts',
+    };
+    const aliases = <String, String>{
+      'aloo': 'potato', 'aaloo': 'potato', 'आलू': 'potato',
+      'pyaaz': 'onion', 'pyaz': 'onion', 'प्याज': 'onion', 'प्याज़': 'onion',
+      'tamatar': 'tomato', 'टमाटर': 'tomato', 'gobhi': 'cauliflower',
+      'phool gobhi': 'cauliflower', 'फूलगोभी': 'cauliflower',
+      'paneer': 'paneer', 'पनीर': 'paneer',
+      'chawal': 'rice', 'चावल': 'rice', 'aata': 'atta', 'आटा': 'atta',
+      'matar': 'peas', 'मटर': 'peas', 'dhaniya': 'coriander', 'धनिया': 'coriander',
+      'jeera': 'cumin', 'जीरा': 'cumin', 'namak': 'salt', 'नमक': 'salt',
+      'tel': 'oil', 'तेल': 'oil', 'lehsun': 'garlic', 'लहसुन': 'garlic',
+      'adrak': 'ginger', 'अदरक': 'ginger', 'hari mirch': 'green chilli',
+      'हरी मिर्च': 'green chilli', 'nimbu': 'lemon', 'नींबू': 'lemon',
+      'dahi': 'curd', 'दही': 'curd', 'haldi': 'turmeric', 'हल्दी': 'turmeric',
+      'baingan': 'brinjal', 'बैंगन': 'brinjal', 'palak': 'palak', 'पालक': 'palak',
+    };
+    for (final entry in aliases.entries) {
+      if (normalized.contains(entry.key)) result.add(entry.value);
+    }
+    for (final name in allNames) {
+      final key = _canonicalIngredientKey(name);
+      if (normalized.contains(name.toLowerCase()) || normalized.contains(key)) {
+        result.add(key);
+      }
+    }
+    return result;
+  }
+
+  int addPantryItemsFromSpeech(String transcript) {
+    final recognized = _recognizedIngredientKeys(transcript);
+    var added = 0;
+    for (final key in recognized) {
+      if (!_pantry.any((item) => _canonicalIngredientKey(item.name) == key)) {
+        addPantryItem(PantryItem(id: _uuid.v4(), name: key, emoji: '🧺', quantity: 1), notify: false);
+        added++;
+      }
+    }
+    if (added > 0) notifyListeners();
+    return added;
+  }
+
+  int setVoiceRecipePrompt(String prompt) {
+    voiceRecipePrompt = prompt.trim();
+    _voiceRecipeIngredients
+      ..clear()
+      ..addAll(_recognizedIngredientKeys(voiceRecipePrompt));
+    notifyListeners();
+    return _voiceRecipeIngredients.length;
+  }
+
+  void clearVoiceRecipePrompt() {
+    voiceRecipePrompt = '';
+    _voiceRecipeIngredients.clear();
+    notifyListeners();
   }
 
   void addPantryItem(PantryItem item, {bool notify = true}) {
