@@ -95,9 +95,9 @@ class _CartTile extends StatelessWidget {
                     isDense: true,
                     underline: const SizedBox.shrink(),
                     items: const [
-                      DropdownMenuItem(value: 1, child: Text('Pack: 1 kg')),
-                      DropdownMenuItem(value: 5, child: Text('Pack: 5 kg')),
-                      DropdownMenuItem(value: 10, child: Text('Pack: 10 kg')),
+                      DropdownMenuItem(value: 1, child: Text(store.t('Pack: 1 kg'))),
+                      DropdownMenuItem(value: 5, child: Text(store.t('Pack: 5 kg'))),
+                      DropdownMenuItem(value: 10, child: Text(store.t('Pack: 10 kg'))),
                     ],
                     onChanged: (value) {
                       if (value != null) store.changeCartPackSize(item.id, value);
@@ -207,6 +207,7 @@ class _CheckoutBar extends StatelessWidget {
   }
 
   Future<void> _placeBlinkitOrder(BuildContext context) async {
+    final store = context.read<KitchenStore>();
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -218,13 +219,13 @@ class _CheckoutBar extends StatelessWidget {
             const Text('⚡', style: TextStyle(fontSize: 40)),
             const SizedBox(height: 8),
             const Text(
-              'Blinkit ordering is not connected',
+              store.language == 'Hindi' ? 'Blinkit ऑर्डरिंग कनेक्ट नहीं है' : store.language == 'Hinglish' ? 'Blinkit ordering connected nahi hai' : 'Blinkit ordering is not connected',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             const Text(
-              'This cart currently uses estimated local-market prices. It cannot send items to Blinkit or place an order, and no payment/order will be made from this screen. Open Blinkit separately to check live prices and add items.',
+              store.language == 'Hindi' ? 'इस कार्ट में स्थानीय बाज़ार के अनुमानित दाम हैं। यह Blinkit को सामान नहीं भेज सकता और ऑर्डर या पेमेंट नहीं करेगा। लाइव दाम देखने और सामान जोड़ने के लिए Blinkit अलग से खोलें।' : store.language == 'Hinglish' ? 'Is cart mein local market ke estimated rates hain. Ye Blinkit par items bhej ya order place nahi kar sakta. Live prices check karne ke liye Blinkit alag se kholo.' : 'This cart uses estimated local-market prices. It cannot send items to Blinkit or place an order. Open Blinkit separately to check live prices and add items.',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.muted),
             ),
@@ -233,7 +234,7 @@ class _CheckoutBar extends StatelessWidget {
               width: double.infinity,
               child: FilledButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Got it'),
+                child: Text(store.language == 'Hindi' ? 'समझ गया' : store.language == 'Hinglish' ? 'Theek hai' : 'Got it'),
               ),
             ),
           ],
