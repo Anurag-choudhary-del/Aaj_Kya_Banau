@@ -81,7 +81,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
             ),
           const SizedBox(height: 8),
           const Text(
-            'Meal ideas are budget-conscious home-cooking suggestions. Prices and seasonal availability vary; chosen options stay selected while the app remains open.',
+            context.watch<KitchenStore>().language == 'Hindi' ? 'ये बजट के हिसाब से घर पर बनने वाले खाने के सुझाव हैं। दाम और मौसमी उपलब्धता बदल सकती है; चुने गए विकल्प ऐप खुला रहने तक सेव रहते हैं।' : context.watch<KitchenStore>().language == 'Hinglish' ? 'Ye budget-friendly home cooking ideas hain. Prices aur seasonal availability badal sakti hai; selections app open rehne tak save hain.' : 'Meal ideas are budget-conscious home-cooking suggestions. Prices and seasonal availability vary; chosen options stay selected while the app remains open.',
             style: TextStyle(color: AppColors.muted, fontSize: 12),
           ),
           if (existingPlan.isEmpty) const SizedBox.shrink(),
@@ -186,8 +186,10 @@ class _ReminderCard extends StatelessWidget {
           children: [
             Text(context.watch<KitchenStore>().t('Evening reminder'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
             SizedBox(height: 2),
-            Text('Reminder toggle (scheduled notifications not yet enabled)',
-              style: TextStyle(color: AppColors.muted, fontSize: 12)),
+            Text(
+              context.watch<KitchenStore>().language == 'Hindi' ? 'रिमाइंडर का विकल्प (अभी नोटिफिकेशन शेड्यूल नहीं होते)' : context.watch<KitchenStore>().language == 'Hinglish' ? 'Reminder toggle (notifications abhi schedule nahi hote)' : 'Reminder toggle (scheduled notifications not yet enabled)',
+              style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
           ],
         )),
         Switch.adaptive(value: enabled, onChanged: onChanged),
@@ -250,7 +252,7 @@ class _DayMealCard extends StatelessWidget {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                         leading: Text(recipe.emoji, style: const TextStyle(fontSize: 23)),
                         title: Text(store.displayName(recipe.name), style: const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text('${recipe.minutes} min · tap for ingredients'),
+                        subtitle: Text(store.language == 'Hindi' ? '${recipe.minutes} मिनट · सामग्री देखने के लिए टैप करें' : store.language == 'Hinglish' ? '${recipe.minutes} min · ingredients dekhne ke liye tap karo' : '${recipe.minutes} min · tap for ingredients'),
                         trailing: selected.id == recipe.id ? const Icon(Icons.check_circle, color: AppColors.have) : const Icon(Icons.chevron_right),
                         onTap: () => onSelect(category, recipe),
                       ),
