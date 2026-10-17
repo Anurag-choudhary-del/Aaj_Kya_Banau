@@ -107,7 +107,7 @@ class _ScanScreenState extends State<ScanScreen> {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.white24),
                 ),
-                child: const Column(
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.document_scanner_outlined, color: Colors.white, size: 52),
@@ -132,11 +132,11 @@ class _ScanScreenState extends State<ScanScreen> {
               )),
             ]),
             const SizedBox(height: 20),
-            if (_loading) const Center(child: Padding(
+            if (_loading) Center(child: Padding(
               padding: EdgeInsets.all(24),
               child: Column(children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 12),
+                const CircularProgressIndicator(),
+                const SizedBox(height: 12),
                 Text(store.language == 'Hindi' ? 'AI फोटो में सामग्री पहचान रहा है…' : store.language == 'Hinglish' ? 'AI photo mein ingredients pehchaan raha hai…' : 'AI is identifying ingredients in the photo…', style: TextStyle(color: Colors.white70)),
               ]),
             )),
