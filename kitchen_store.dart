@@ -168,13 +168,47 @@ class KitchenStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  ({String unit, int price}) _groceryEstimate(String name) {
+    final key = name.trim().toLowerCase();
+    // Indicative local-market estimates only; these are not live Blinkit prices.
+    const kgPrices = <String, int>{
+      'potato': 30, 'onion': 40, 'tomato': 40, 'capsicum': 60,
+      'palak': 30, 'cauliflower': 40, 'cabbage': 35, 'carrot': 50,
+      'peas': 80, 'brinjal': 40, 'lauki': 35, 'cucumber': 35,
+      'lemon': 80, 'ginger': 120, 'garlic': 160,
+      'rice': 60, 'toor dal': 150, 'moong dal': 130, 'chana dal': 100,
+      'besan': 100, 'atta': 45, 'sugar': 45,
+    };
+    const piecePrices = <String, int>{'eggs': 8, 'banana': 8, 'coriander': 20};
+    const packPrices = <String, int>{
+      'turmeric': 35, 'salt': 25, 'cumin': 45, 'mustard seeds': 35,
+      'chilli powder': 45, 'garam masala': 60, 'cream': 35,
+      'butter': 60, 'paneer': 90, 'curd': 35, 'oil': 150,
+      'green chilli': 20, 'coconut': 40,
+    };
+    if (kgPrices.containsKey(key)) return (unit: 'kg', price: kgPrices[key]!);
+    if (piecePrices.containsKey(key)) return (unit: 'pcs', price: piecePrices[key]!);
+    if (key == 'oil') return (unit: 'L', price: 150);
+    if (key == 'coriander') return (unit: 'bunch', price: 20);
+    if (packPrices.containsKey(key)) return (unit: 'pack', price: packPrices[key]!);
+    return (unit: 'pack', price: 30);
+  }
+
   void addGrocery(String name, String emoji, {bool notify = true}) {
     final existing = _cart.indexWhere((item) => item.name.toLowerCase() == name.toLowerCase());
     if (existing >= 0) {
       final current = _cart[existing];
       _cart[existing] = current.copyWith(quantity: current.quantity + 1);
     } else {
-      _cart.add(GroceryItem(id: _uuid.v4(), name: name, emoji: emoji, quantity: 1));
+      final estimate = _groceryEstimate(name);
+      _cart.add(GroceryItem(
+        id: _uuid.v4(),
+        name: name,
+        emoji: emoji,
+        quantity: 1,
+        unit: estimate.unit,
+        price: estimate.price,
+      ));
     }
     if (notify) notifyListeners();
   }
