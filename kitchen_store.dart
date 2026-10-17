@@ -155,7 +155,6 @@ class KitchenStore extends ChangeNotifier {
       'Chickpeas': 'छोले',
       'Bhindi': 'भिंडी',
       'Ghee': 'घी',
-      'Sooji': 'सूजी',
       'Idli batter': 'इडली बैटर',
       'Makhana': 'मखाना',
       'Puffed rice': 'मुरमुरे',
