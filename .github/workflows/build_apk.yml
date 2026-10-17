@@ -54,6 +54,7 @@ jobs:
               '    <uses-permission android:name="android.permission.INTERNET" />',
               '    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />',
               '    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />',
+              '    <uses-permission android:name="android.permission.RECORD_AUDIO" />',
           ):
               if permission not in source:
                   source = source.replace(marker, permission + "\n\n" + marker, 1)
@@ -70,7 +71,7 @@ jobs:
               source = source.replace("    </application>", receivers + "\n    </application>", 1)
           manifest.write_text(source)
           verified = manifest.read_text()
-          for required in ("android.permission.INTERNET", "android.permission.POST_NOTIFICATIONS", "android.permission.RECEIVE_BOOT_COMPLETED", "ScheduledNotificationReceiver", "ScheduledNotificationBootReceiver"):
+          for required in ("android.permission.INTERNET", "android.permission.POST_NOTIFICATIONS", "android.permission.RECEIVE_BOOT_COMPLETED", "android.permission.RECORD_AUDIO", "ScheduledNotificationReceiver", "ScheduledNotificationBootReceiver"):
               if required not in verified:
                   raise SystemExit("Missing Android manifest requirement: " + required)
           # flutter_local_notifications requires Android core-library desugaring.
