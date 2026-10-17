@@ -20,7 +20,8 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    final cartCount = context.watch<KitchenStore>().cart.length;
+    final store = context.watch<KitchenStore>();
+    final cartCount = store.cart.length;
 
     return Scaffold(
       body: IndexedStack(
@@ -39,17 +40,17 @@ class _MainShellState extends State<MainShell> {
           const NavigationDestination(
             icon: Icon(Icons.kitchen_outlined),
             selectedIcon: Icon(Icons.kitchen),
-            label: 'Pantry',
+            label: store.t('Pantry'),
           ),
           const NavigationDestination(
             icon: Icon(Icons.auto_awesome_outlined),
             selectedIcon: Icon(Icons.auto_awesome),
-            label: 'Recipes',
+            label: store.t('Recipes'),
           ),
           const NavigationDestination(
             icon: Icon(Icons.calendar_month_outlined),
             selectedIcon: Icon(Icons.calendar_month),
-            label: 'Planner',
+            label: store.t('Planner'),
           ),
           NavigationDestination(
             icon: Badge(
@@ -64,7 +65,7 @@ class _MainShellState extends State<MainShell> {
               label: Text('$cartCount'),
               child: const Icon(Icons.shopping_bag),
             ),
-            label: 'Cart',
+            label: store.t('Cart'),
           ),
         ],
       ),
