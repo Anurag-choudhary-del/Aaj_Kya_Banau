@@ -30,9 +30,28 @@ class _HomeScreenState extends State<HomeScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
-          const Text(
-            'Namaste 👋',
-            style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w600),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  store.t('Namaste 👋'),
+                  style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w600),
+                ),
+              ),
+              DropdownButton<String>(
+                value: store.language,
+                underline: const SizedBox.shrink(),
+                isDense: true,
+                items: const [
+                  DropdownMenuItem(value: 'English', child: Text('English')),
+                  DropdownMenuItem(value: 'Hinglish', child: Text('Hinglish')),
+                  DropdownMenuItem(value: 'Hindi', child: Text('हिन्दी')),
+                ],
+                onChanged: (value) {
+                  if (value != null) store.setLanguage(value);
+                },
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           const Text(
