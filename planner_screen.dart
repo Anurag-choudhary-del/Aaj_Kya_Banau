@@ -260,7 +260,9 @@ class _DayMealCard extends StatelessWidget {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                         leading: Text(recipe.emoji, style: const TextStyle(fontSize: 23)),
                         title: Text(store.displayName(recipe.name), style: const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text(store.language == 'Hindi' ? '${recipe.minutes} मिनट · सामग्री देखने के लिए टैप करें' : store.language == 'Hinglish' ? '${recipe.minutes} min · ingredients dekhne ke liye tap karo' : '${recipe.minutes} min · tap for ingredients'),
+                        subtitle: Text(
+                          '${store.t(PlannerCatalog.regionForRecipe(category, recipe.id))} · ${store.language == 'Hindi' ? '${recipe.minutes} मिनट · सामग्री देखने के लिए टैप करें' : store.language == 'Hinglish' ? '${recipe.minutes} min · ingredients dekhne ke liye tap karo' : '${recipe.minutes} min · tap for ingredients'}',
+                        ),
                         trailing: chosen?.id == recipe.id ? const Icon(Icons.check_circle, color: AppColors.have) : const Icon(Icons.chevron_right),
                         onTap: () => onSelect(category, recipe),
                       ),
