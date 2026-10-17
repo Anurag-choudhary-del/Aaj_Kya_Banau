@@ -84,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 22),
           Row(
             children: [
-              const Text(
+              Text(
                 store.t('Your pantry'),
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
               ),
