@@ -36,8 +36,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(store.t('Monthly meal planner'), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
           ),
           const SizedBox(height: 6),
