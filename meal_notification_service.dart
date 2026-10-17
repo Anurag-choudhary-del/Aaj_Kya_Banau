@@ -28,8 +28,8 @@ class MealNotificationService {
     if (_initialized) return;
     tz_data.initializeTimeZones();
     try {
-      final timezone = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(timezone.identifier));
+      final String timezone = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(timezone));
     } catch (error) {
       debugPrint('Could not resolve device timezone for reminders: $error');
     }
