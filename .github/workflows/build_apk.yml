@@ -47,15 +47,33 @@ jobs:
           manifest = Path("android/app/src/main/AndroidManifest.xml")
           source = manifest.read_text()
           permission = '    <uses-permission android:name="android.permission.INTERNET" />'
-          if "android.permission.INTERNET" not in source:
-              marker = "    <application"
-              if marker not in source:
-                  raise SystemExit("Could not find <application> in AndroidManifest.xml")
-              source = source.replace(marker, permission + "\n\n" + marker, 1)
-              manifest.write_text(source)
-          if "android.permission.INTERNET" not in manifest.read_text():
-              raise SystemExit("INTERNET permission was not added to AndroidManifest.xml")
-          print("Verified Android INTERNET permission for release APK.")
+          marker = "    <application"
+          if marker not in source:
+              raise SystemExit("Could not find <application> in AndroidManifest.xml")
+          for permission in (
+              '    <uses-permission android:name="android.permission.INTERNET" />',
+              '    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />',
+              '    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />',
+          ):
+              if permission not in source:
+                  source = source.replace(marker, permission + "\n\n" + marker, 1)
+          receivers = '''    <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+              <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+                  <intent-filter>
+                      <action android:name="android.intent.action.BOOT_COMPLETED" />
+                      <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                      <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                      <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+                  </intent-filter>
+              </receiver>'''
+          if "com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" not in source:
+              source = source.replace("    </application>", receivers + "\n    </application>", 1)
+          manifest.write_text(source)
+          verified = manifest.read_text()
+          for required in ("android.permission.INTERNET", "android.permission.POST_NOTIFICATIONS", "android.permission.RECEIVE_BOOT_COMPLETED", "ScheduledNotificationReceiver", "ScheduledNotificationBootReceiver"):
+              if required not in verified:
+                  raise SystemExit("Missing Android manifest requirement: " + required)
+          print("Verified internet and scheduled-notification Android manifest entries.")
           PY
           mkdir -p lib/screens lib/state lib/theme lib/models lib/data lib/services test
           cp main.dart lib/main.dart
@@ -73,6 +91,7 @@ jobs:
           cp kitchen_catalog.dart lib/data/kitchen_catalog.dart
           cp planner_catalog.dart lib/data/planner_catalog.dart
           cp ingredient_recognition_service.dart lib/services/ingredient_recognition_service.dart
+          cp meal_notification_service.dart lib/meal_notification_service.dart
           cp widget_test.dart test/widget_test.dart
 
       - name: Get dependencies
