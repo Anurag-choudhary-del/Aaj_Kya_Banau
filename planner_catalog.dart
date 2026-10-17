@@ -202,6 +202,15 @@ class PlannerCatalog {
     ];
   }
 
+  static String regionForRecipe(String category, String recipeId) {
+    final regions = _regionalIds[category];
+    if (regions == null) return 'Complementary';
+    for (final entry in regions.entries) {
+      if (entry.value.contains(recipeId)) return entry.key;
+    }
+    return 'Complementary';
+  }
+
   static Recipe defaultForDay(String category, int day) {
     return optionsForDay(category, day).first;
   }
