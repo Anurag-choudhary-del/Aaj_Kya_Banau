@@ -208,8 +208,11 @@ class _DayMealCard extends StatelessWidget {
     const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
-      child: Column(
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
@@ -256,6 +259,7 @@ class _DayMealCard extends StatelessWidget {
               );
             }),
         ],
+        ),
       ),
     );
   }
