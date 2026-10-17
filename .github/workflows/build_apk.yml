@@ -106,7 +106,13 @@ jobs:
           gradle_path.write_text(gradle)
           if "desugar_jdk_libs:2.1.4" not in gradle_path.read_text():
               raise SystemExit("Android core-library desugaring was not configured")
-          print("Verified internet, notification manifest entries, and Android desugaring.")
+          # Set the app name shown by Android.
+          source = manifest.read_text()
+          source = source.replace('android:label="aaj_kya_banau"', 'android:label="Kitchen Saheli"')
+          manifest.write_text(source)
+          if 'android:label="Kitchen Saheli"' not in manifest.read_text():
+              raise SystemExit("Kitchen Saheli app label was not applied")
+          print("Verified internet, notification manifest entries, Android desugaring, and app label.")
           PY
           mkdir -p lib/screens lib/state lib/theme lib/models lib/data lib/services test
           cp main.dart lib/main.dart
