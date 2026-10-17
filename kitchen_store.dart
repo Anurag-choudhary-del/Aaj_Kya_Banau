@@ -193,7 +193,7 @@ class KitchenStore extends ChangeNotifier {
     const packPrices = <String, int>{
       'turmeric': 35, 'salt': 25, 'cumin': 45, 'mustard seeds': 35,
       'chilli powder': 45, 'garam masala': 60, 'cream': 35,
-      'butter': 60, 'paneer': 90, 'curd': 35, 'oil': 150,
+      'butter': 60, 'paneer': 90, 'curd': 35,
       'green chilli': 20, 'coconut': 40,
     };
     if (kgPrices.containsKey(key)) return (unit: 'kg', price: kgPrices[key]!);
