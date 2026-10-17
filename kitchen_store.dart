@@ -11,6 +11,7 @@ import '../data/planner_catalog.dart';
 import '../models/grocery_item.dart';
 import '../models/pantry_item.dart';
 import '../models/recipe.dart';
+import '../meal_notification_service.dart';
 
 class RecipeMatch {
   const RecipeMatch({required this.recipe, required this.have, required this.missing});
@@ -26,6 +27,7 @@ class KitchenStore extends ChangeNotifier {
     unawaited(_loadPantry());
     unawaited(_loadPlannerSelections());
     unawaited(_loadLanguage());
+    unawaited(_loadReminderSetting());
     ensureMonthlyPlan(DateTime.now());
   }
 
@@ -33,12 +35,15 @@ class KitchenStore extends ChangeNotifier {
   static const _pantryStorageKey = 'aaj_kya_banau_pantry_v1';
   static const _plannerStorageKey = 'aaj_kya_banau_planner_v1';
   static const _languageStorageKey = 'aaj_kya_banau_language_v1';
+  static const _reminderStorageKey = 'aaj_kya_banau_meal_reminders_v1';
+  static const _noneSelection = '__none__';
 
   final _uuid = const Uuid();
   final List<PantryItem> _pantry = [];
   final List<GroceryItem> _cart = [];
   final Map<String, Map<String, Recipe>> _plansByMonth = {};
   final Map<String, Map<String, Recipe>> _plannerSelections = {};
+  final Set<String> _noneSelections = <String>{};
   bool eveningReminder = false;
   bool _pantryLoaded = false;
   String language = 'English';
@@ -391,13 +396,31 @@ class KitchenStore extends ChangeNotifier {
     return plan;
   }
 
+  String _selectionKey(DateTime date, String category) => '${dateKey(date)}|$category';
+
   Recipe? selectedPlannerMeal(DateTime date, String category) {
     return _plannerSelections[dateKey(date)]?[category];
   }
 
+  bool isPlannerMealNone(DateTime date, String category) =>
+      _noneSelections.contains(_selectionKey(date, category));
+
+  bool hasExplicitPlannerSelection(DateTime date, String category) =>
+      selectedPlannerMeal(date, category) != null || isPlannerMealNone(date, category);
+
   void selectPlannerMeal(DateTime date, String category, Recipe recipe) {
+    _noneSelections.remove(_selectionKey(date, category));
     _plannerSelections.putIfAbsent(dateKey(date), () => <String, Recipe>{})[category] = recipe;
     unawaited(_savePlannerSelections());
+    unawaited(_refreshMealReminders());
+    notifyListeners();
+  }
+
+  void setPlannerMealNone(DateTime date, String category) {
+    _plannerSelections[dateKey(date)]?.remove(category);
+    _noneSelections.add(_selectionKey(date, category));
+    unawaited(_savePlannerSelections());
+    unawaited(_refreshMealReminders());
     notifyListeners();
   }
 
@@ -433,10 +456,14 @@ class KitchenStore extends ChangeNotifier {
         final selections = <String, Recipe>{};
         for (final mealEntry in (dateEntry.value as Map).entries) {
           if (mealEntry.key is! String || mealEntry.value is! String) continue;
-          final recipe = recipesById[mealEntry.value as String];
-          if (recipe != null && PlannerCatalog.categories.containsKey(mealEntry.key as String)) {
-            selections[mealEntry.key as String] = recipe;
+          final category = mealEntry.key as String;
+          if (!PlannerCatalog.categories.containsKey(category)) continue;
+          if (mealEntry.value == _noneSelection) {
+            _noneSelections.add('${dateEntry.key}|$category');
+            continue;
           }
+          final recipe = recipesById[mealEntry.value as String];
+          if (recipe != null) selections[category] = recipe;
         }
         if (selections.isNotEmpty) _plannerSelections[dateEntry.key as String] = selections;
       }
@@ -453,6 +480,13 @@ class KitchenStore extends ChangeNotifier {
         data[entry.key] = {
           for (final meal in entry.value.entries) meal.key: meal.value.id,
         };
+      }
+      for (final key in _noneSelections) {
+        final separator = key.lastIndexOf('|');
+        if (separator <= 0) continue;
+        final date = key.substring(0, separator);
+        final category = key.substring(separator + 1);
+        data.putIfAbsent(date, () => <String, String>{})[category] = _noneSelection;
       }
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_plannerStorageKey, jsonEncode(data));
@@ -627,8 +661,64 @@ class KitchenStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> _loadReminderSetting() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      eveningReminder = prefs.getBool(_reminderStorageKey) ?? false;
+    } catch (_) {
+      eveningReminder = false;
+    }
+    if (eveningReminder) await _refreshMealReminders();
+    notifyListeners();
+  }
+
   void setEveningReminder(bool value) {
     eveningReminder = value;
+    unawaited(_saveReminderSetting(value));
+    if (value) {
+      unawaited(_enableAndRefreshMealReminders());
+    } else {
+      unawaited(MealNotificationService.instance.cancelMealReminders());
+    }
     notifyListeners();
+  }
+
+  Future<void> _saveReminderSetting(bool value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_reminderStorageKey, value);
+    } catch (_) {
+      // Keep the toggle active for this session if storage is unavailable.
+    }
+  }
+
+  Future<void> _enableAndRefreshMealReminders() async {
+    final granted = await MealNotificationService.instance.requestPermission();
+    if (!granted) {
+      eveningReminder = false;
+      await _saveReminderSetting(false);
+      notifyListeners();
+      return;
+    }
+    await _refreshMealReminders();
+  }
+
+  Future<void> _refreshMealReminders() async {
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+    String? chosen(String category) {
+      if (isPlannerMealNone(tomorrow, category)) return null;
+      final recipe = selectedPlannerMeal(tomorrow, category);
+      return recipe == null ? null : displayName(recipe.name);
+    }
+    await MealNotificationService.instance.schedule(
+      enabled: eveningReminder,
+      now: now,
+      language: language,
+      breakfast: chosen('Breakfast'),
+      lunch: chosen('Lunch'),
+      dinner: chosen('Dinner'),
+      snacks: chosen('Snacks'),
+    );
   }
 }
