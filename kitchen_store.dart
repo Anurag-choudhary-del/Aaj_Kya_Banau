@@ -174,6 +174,17 @@ class KitchenStore extends ChangeNotifier {
       'Sprouts': 'अंकुरित दालें',
       'Sweet corn': 'स्वीट कॉर्न',
       'Peanuts': 'मूंगफली',
+      'Plain Dosa with Chutney': 'चटनी के साथ सादा डोसा',
+      'Luchi with Alur Dom': 'लूची और आलूर दम',
+      'Gujarati Dhokla': 'गुजराती ढोकला',
+      'South Indian Lemon Rice': 'दक्षिण भारतीय नींबू चावल',
+      'Bengali Cholar Dal with Rice': 'बंगाली चोलार दाल चावल',
+      'South Indian Curd Rice': 'दक्षिण भारतीय दही चावल',
+      'Bengali Aloo Dum with Rice': 'बंगाली आलू दम चावल',
+      'Mumbai Pav Bhaji': 'मुंबई पाव भाजी',
+      'South Indian Sundal': 'दक्षिण भारतीय सुंडल',
+      'Bengali Jhal Muri': 'बंगाली झालमुड़ी',
+      'Gujarati Dhokla Bites': 'गुजराती ढोकला बाइट्स',
     },
     'Hinglish': {
       'Pantry': 'Rasoi',
@@ -300,6 +311,17 @@ class KitchenStore extends ChangeNotifier {
       'Sprouts': 'Sprouts',
       'Sweet corn': 'Sweet corn',
       'Peanuts': 'Moongfali',
+      'Plain Dosa with Chutney': 'Plain dosa with chutney',
+      'Luchi with Alur Dom': 'Luchi with alur dom',
+      'Gujarati Dhokla': 'Gujarati dhokla',
+      'South Indian Lemon Rice': 'South Indian lemon rice',
+      'Bengali Cholar Dal with Rice': 'Bengali cholar dal rice',
+      'South Indian Curd Rice': 'South Indian curd rice',
+      'Bengali Aloo Dum with Rice': 'Bengali aloo dum rice',
+      'Mumbai Pav Bhaji': 'Mumbai pav bhaji',
+      'South Indian Sundal': 'South Indian sundal',
+      'Bengali Jhal Muri': 'Bengali jhal muri',
+      'Gujarati Dhokla Bites': 'Gujarati dhokla bites',
     },
   };
 
@@ -459,8 +481,7 @@ class KitchenStore extends ChangeNotifier {
       final decoded = jsonDecode(raw);
       if (decoded is! Map) return;
       final recipesById = <String, Recipe>{
-        for (final recipes in PlannerCatalog.categories.values)
-          for (final recipe in recipes) recipe.id: recipe,
+        for (final recipe in PlannerCatalog.allRecipes) recipe.id: recipe,
       };
       for (final dateEntry in decoded.entries) {
         if (dateEntry.key is! String || dateEntry.value is! Map) continue;
@@ -625,7 +646,7 @@ class KitchenStore extends ChangeNotifier {
     var added = 0;
     for (final key in recognized) {
       if (!_pantry.any((item) => _canonicalIngredientKey(item.name) == key)) {
-        addPantryItem(PantryItem(id: _uuid.v4(), name: key, emoji: '🧺', quantity: 1), notify: false);
+        addPantryItem(PantryItem(id: _uuid.v4(), name: _canonicalDisplayName(key), emoji: '🧺', quantity: 1), notify: false);
         added++;
       }
     }
@@ -664,10 +685,39 @@ class KitchenStore extends ChangeNotifier {
     if (notify) notifyListeners();
   }
 
+  String _canonicalDisplayName(String key) {
+    const names = <String, String>{
+      'potato': 'Potato', 'onion': 'Onion', 'tomato': 'Tomato',
+      'rice': 'Rice', 'atta': 'Atta', 'eggs': 'Eggs', 'curd': 'Curd',
+      'coriander': 'Coriander', 'cumin': 'Cumin', 'salt': 'Salt',
+      'oil': 'Oil', 'garlic': 'Garlic', 'ginger': 'Ginger',
+      'green chilli': 'Green chilli', 'peas': 'Peas', 'lemon': 'Lemon',
+      'turmeric': 'Turmeric', 'cauliflower': 'Cauliflower', 'cabbage': 'Cabbage',
+      'carrot': 'Carrot', 'cucumber': 'Cucumber', 'brinjal': 'Brinjal',
+      'capsicum': 'Capsicum', 'palak': 'Palak', 'lauki': 'Lauki',
+      'moong dal': 'Moong dal', 'chana dal': 'Chana dal',
+      'black chickpeas': 'Black chickpeas', 'soya chunks': 'Soya chunks',
+      'banana': 'Banana', 'bread': 'Bread', 'paneer': 'Paneer',
+      'coconut': 'Coconut', 'besan': 'Besan', 'masoor dal': 'Masoor dal',
+      'roasted chana': 'Roasted chana', 'chilli powder': 'Chilli powder',
+      'poha': 'Poha', 'sooji': 'Sooji', 'dalia': 'Dalia', 'rajma': 'Rajma',
+      'chickpeas': 'Chickpeas', 'bhindi': 'Bhindi', 'ghee': 'Ghee',
+      'idli batter': 'Idli batter', 'makhana': 'Makhana',
+      'puffed rice': 'Puffed rice', 'sprouts': 'Sprouts',
+      'sweet corn': 'Sweet corn', 'peanuts': 'Peanuts',
+    };
+    return names[key] ?? key;
+  }
+
   void addManualItem(String name) {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return;
-    addPantryItem(PantryItem(id: _uuid.v4(), name: trimmed, emoji: '🧺', quantity: 1));
+    final key = _canonicalIngredientKey(trimmed);
+    final known = _canonicalDisplayName(key);
+    final normalizedName = known == key && !_recognizedIngredientKeys(trimmed).contains(key)
+        ? trimmed
+        : known;
+    addPantryItem(PantryItem(id: _uuid.v4(), name: normalizedName, emoji: '🧺', quantity: 1));
   }
 
   void removePantryItem(String id) {
