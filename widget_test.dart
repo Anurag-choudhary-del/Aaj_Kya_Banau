@@ -16,12 +16,11 @@ void main() {
     await tester.tap(find.text('Recipes'));
     await tester.pumpAndSettle();
     expect(find.text('Recipe suggestions'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('Paneer Butter Masala'),
-      300,
-      scrollable: find.byType(Scrollable).first,
+    expect(
+      find.text('No recipes because you don’t have ingredients in your kitchen. Add pantry items to see what you can cook.'),
+      findsOneWidget,
     );
-    expect(find.text('Paneer Butter Masala'), findsOneWidget);
+    expect(find.text('Paneer Butter Masala'), findsNothing);
 
     await tester.tap(find.text('Planner'));
     await tester.pumpAndSettle();
@@ -34,10 +33,14 @@ void main() {
     expect(find.text('Blinkit (not connected)'), findsOneWidget);
   });
 
-  test('planner offers five choices for every meal category', () {
+  test('planner offers five regionally varied choices and rotates the next day', () {
     expect(PlannerCatalog.categories.keys.toSet(), {'Breakfast', 'Lunch', 'Dinner', 'Snacks'});
     for (final category in PlannerCatalog.categories.keys) {
-      expect(PlannerCatalog.optionsForDay(category, 17), hasLength(5));
+      final today = PlannerCatalog.optionsForDay(category, 17);
+      final tomorrow = PlannerCatalog.optionsForDay(category, 18);
+      expect(today, hasLength(5));
+      expect(tomorrow, hasLength(5));
+      expect(today.map((r) => r.id).toSet().intersection(tomorrow.map((r) => r.id).toSet()), isEmpty);
     }
   });
 
