@@ -193,7 +193,7 @@ class _ReminderCard extends StatelessWidget {
             Text(store.t('Evening reminder'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
             const SizedBox(height: 2),
             Text(
-              store.language == 'Hindi' ? 'रिमाइंडर का विकल्प (अभी नोटिफिकेशन शेड्यूल नहीं होते)' : store.language == 'Hinglish' ? 'Reminder toggle (notifications abhi schedule nahi hote)' : 'Reminder toggle (scheduled notifications not yet enabled)',
+              store.language == 'Hindi' ? 'चुने गए खाने के लिए शाम 7 बजे और दोपहर 12:30 बजे रिमाइंडर' : store.language == 'Hinglish' ? 'Selected meals ke reminders: shaam 7 baje aur dopahar 12:30' : 'Reminders only for selected meals: 7:00 PM and 12:30 PM',
               style: const TextStyle(color: AppColors.muted, fontSize: 12),
             ),
           ],
@@ -241,7 +241,9 @@ class _DayMealCard extends StatelessWidget {
           ),
           for (final category in PlannerCatalog.categories.keys)
             Builder(builder: (context) {
-              final selected = store.selectedPlannerMeal(date, category) ?? PlannerCatalog.defaultForDay(category, date.day);
+              final isNone = store.isPlannerMealNone(date, category);
+              final chosen = store.selectedPlannerMeal(date, category);
+              final displayed = chosen ?? (isNone ? null : PlannerCatalog.defaultForDay(category, date.day));
               final options = PlannerCatalog.optionsForDay(category, date.day);
               return Theme(
                 data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -250,7 +252,7 @@ class _DayMealCard extends StatelessWidget {
                   childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
                   leading: Text(_categoryEmoji(category), style: const TextStyle(fontSize: 22)),
                   title: Text(store.t(category), style: const TextStyle(fontWeight: FontWeight.w800)),
-                  subtitle: Text('${selected.emoji} ${store.displayName(selected.name)}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(displayed == null ? store.t('None — skip this meal') : '${displayed.emoji} ${store.displayName(displayed.name)}', maxLines: 1, overflow: TextOverflow.ellipsis),
                   children: [
                     for (final recipe in options)
                       ListTile(
@@ -259,9 +261,26 @@ class _DayMealCard extends StatelessWidget {
                         leading: Text(recipe.emoji, style: const TextStyle(fontSize: 23)),
                         title: Text(store.displayName(recipe.name), style: const TextStyle(fontWeight: FontWeight.w600)),
                         subtitle: Text(store.language == 'Hindi' ? '${recipe.minutes} मिनट · सामग्री देखने के लिए टैप करें' : store.language == 'Hinglish' ? '${recipe.minutes} min · ingredients dekhne ke liye tap karo' : '${recipe.minutes} min · tap for ingredients'),
-                        trailing: selected.id == recipe.id ? const Icon(Icons.check_circle, color: AppColors.have) : const Icon(Icons.chevron_right),
+                        trailing: chosen?.id == recipe.id ? const Icon(Icons.check_circle, color: AppColors.have) : const Icon(Icons.chevron_right),
                         onTap: () => onSelect(category, recipe),
                       ),
+                    const SizedBox(height: 4),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: isNone ? const Color(0xFFFFE0C2) : const Color(0xFFFFF8F1),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: isNone ? AppColors.deepSpice : const Color(0xFFE8CDB5), width: isNone ? 2 : 1),
+                      ),
+                      child: ListTile(
+                        dense: true,
+                        leading: const Icon(Icons.block, color: AppColors.deepSpice),
+                        title: Text(store.t('None — skip this meal'), style: const TextStyle(fontWeight: FontWeight.w800)),
+                        subtitle: Text(store.language == 'Hindi' ? 'इस समय के लिए कोई खाना नहीं चुनना' : store.language == 'Hinglish' ? 'Is meal ke liye kuch select nahi karna' : 'Skip a suggested meal for this slot'),
+                        trailing: isNone ? const Icon(Icons.check_circle, color: AppColors.deepSpice) : const Icon(Icons.chevron_right),
+                        selected: isNone,
+                        onTap: () => store.setPlannerMealNone(date, category),
+                      ),
+                    ),
                   ],
                 ),
               );
