@@ -33,13 +33,13 @@ class CartScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Expanded(
             child: store.cart.isEmpty
-                ? const Center(
+                ? Center(
                     child: Padding(
-                      padding: EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(32),
                       child: Text(
                         store.t('Cart is empty.\nAdd missing items from the Recipes tab.'),
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.muted, height: 1.4),
+                        style: const TextStyle(color: AppColors.muted, height: 1.4),
                       ),
                     ),
                   )
