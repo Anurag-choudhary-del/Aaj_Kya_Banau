@@ -286,6 +286,44 @@ class KitchenStore extends ChangeNotifier {
 
   String displayName(String value) => t(value);
 
+  String _canonicalIngredientKey(String name) {
+    final key = name.trim().toLowerCase();
+    const aliases = <String, String>{
+      'aloo': 'potato', 'aaloo': 'potato', 'आलू': 'potato',
+      'pyaaz': 'onion', 'pyaz': 'onion', 'प्याज': 'onion', 'प्याज़': 'onion',
+      'tamatar': 'tomato', 'टमाटर': 'tomato',
+      'chawal': 'rice', 'चावल': 'rice',
+      'aata': 'atta', 'आटा': 'atta',
+      'anda': 'eggs', 'ande': 'eggs', 'अंडा': 'eggs', 'अंडे': 'eggs',
+      'dahi': 'curd', 'दही': 'curd',
+      'dhaniya': 'coriander', 'धनिया': 'coriander',
+      'jeera': 'cumin', 'जीरा': 'cumin',
+      'namak': 'salt', 'नमक': 'salt',
+      'tel': 'oil', 'तेल': 'oil',
+      'lehsun': 'garlic', 'lahsun': 'garlic', 'लहसुन': 'garlic',
+      'adrak': 'ginger', 'अदरक': 'ginger',
+      'hari mirch': 'green chilli', 'हरी मिर्च': 'green chilli',
+      'matar': 'peas', 'मटर': 'peas',
+      'nimbu': 'lemon', 'नींबू': 'lemon',
+      'haldi': 'turmeric', 'हल्दी': 'turmeric',
+      'phool gobhi': 'cauliflower', 'फूलगोभी': 'cauliflower',
+      'patta gobhi': 'cabbage', 'पत्ता गोभी': 'cabbage',
+      'gajar': 'carrot', 'गाजर': 'carrot',
+      'kheera': 'cucumber', 'खीरा': 'cucumber',
+      'baingan': 'brinjal', 'बैंगन': 'brinjal',
+      'shimla mirch': 'capsicum', 'शिमला मिर्च': 'capsicum',
+      'पालक': 'palak',
+      'लौकी': 'lauki',
+      'मूंग दाल': 'moong dal',
+      'चना दाल': 'chana dal',
+      'काला चना': 'black chickpeas',
+      'सोया चंक्स': 'soya chunks',
+      'केला': 'banana',
+      'ब्रेड': 'bread',
+    };
+    return aliases[key] ?? key;
+  }
+
   Future<void> _loadLanguage() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -450,7 +488,10 @@ class KitchenStore extends ChangeNotifier {
     }
   }
 
-  bool hasIngredient(String name) => _pantry.any((item) => item.key == name.trim().toLowerCase());
+  bool hasIngredient(String name) {
+    final wanted = _canonicalIngredientKey(name);
+    return _pantry.any((item) => _canonicalIngredientKey(item.name) == wanted);
+  }
 
   RecipeMatch matchFor(Recipe recipe) {
     final have = <RecipeIngredient>[];
@@ -468,7 +509,8 @@ class KitchenStore extends ChangeNotifier {
   }
 
   void addPantryItem(PantryItem item, {bool notify = true}) {
-    final existing = _pantry.indexWhere((p) => p.key == item.key);
+    final itemKey = _canonicalIngredientKey(item.name);
+    final existing = _pantry.indexWhere((p) => _canonicalIngredientKey(p.name) == itemKey);
     if (existing >= 0) {
       final current = _pantry[existing];
       _pantry[existing] = current.copyWith(
@@ -502,7 +544,7 @@ class KitchenStore extends ChangeNotifier {
   }
 
   ({String unit, int price}) _groceryEstimate(String name) {
-    final key = name.trim().toLowerCase();
+    final key = _canonicalIngredientKey(name);
     // Indicative local-market estimates only; these are not live Blinkit prices.
     const kgPrices = <String, int>{
       'potato': 30, 'onion': 40, 'tomato': 40, 'capsicum': 60,
@@ -528,7 +570,8 @@ class KitchenStore extends ChangeNotifier {
   }
 
   void addGrocery(String name, String emoji, {bool notify = true}) {
-    final existing = _cart.indexWhere((item) => item.name.toLowerCase() == name.toLowerCase());
+    final itemKey = _canonicalIngredientKey(name);
+    final existing = _cart.indexWhere((item) => _canonicalIngredientKey(item.name) == itemKey);
     if (existing >= 0) {
       final current = _cart[existing];
       _cart[existing] = current.copyWith(quantity: current.quantity + 1);
