@@ -349,6 +349,7 @@ class KitchenStore extends ChangeNotifier {
       final saved = prefs.getString(_languageStorageKey);
       if (saved == 'English' || saved == 'Hindi' || saved == 'Hinglish') {
         language = saved!;
+        if (eveningReminder) await _refreshMealReminders();
         notifyListeners();
       }
     } catch (_) {
@@ -359,6 +360,7 @@ class KitchenStore extends ChangeNotifier {
   Future<void> setLanguage(String value) async {
     if (!['English', 'Hindi', 'Hinglish'].contains(value) || language == value) return;
     language = value;
+    if (eveningReminder) unawaited(_refreshMealReminders());
     notifyListeners();
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -470,6 +472,7 @@ class KitchenStore extends ChangeNotifier {
     } catch (_) {
       // Ignore malformed saved planner data and use generated suggestions.
     }
+    if (eveningReminder) await _refreshMealReminders();
     notifyListeners();
   }
 
