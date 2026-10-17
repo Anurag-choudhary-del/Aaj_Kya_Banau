@@ -72,19 +72,19 @@ class MealNotificationService {
     if (!permission) return;
 
     if (breakfast != null) {
-      await _scheduleAt(_breakfastId, tomorrow, 19, 0,
+      await _scheduleAt(_breakfastId, today, 19, 0,
         _title(language, 'breakfast'), _body(language, 'breakfast', breakfast));
     }
     if (lunch != null) {
-      await _scheduleAt(_lunchId, tomorrow, 19, 15,
+      await _scheduleAt(_lunchId, today, 19, 15,
         _title(language, 'lunch'), _body(language, 'lunch', lunch));
     }
     if (snacks != null) {
-      await _scheduleAt(_snacksId, tomorrow, 19, 30,
+      await _scheduleAt(_snacksId, today, 19, 30,
         _title(language, 'snacks'), _body(language, 'snacks', snacks));
     }
     if (dinner != null) {
-      await _scheduleAt(_dinnerId, today, 12, 30,
+      await _scheduleAt(_dinnerId, tomorrow, 12, 30,
         _title(language, 'dinner'), _body(language, 'dinner', dinner));
     }
   }
