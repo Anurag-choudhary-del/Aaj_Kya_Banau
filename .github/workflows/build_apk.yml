@@ -51,7 +51,7 @@ jobs:
               marker = "    <application"
               if marker not in source:
                   raise SystemExit("Could not find <application> in AndroidManifest.xml")
-              source = source.replace(marker, permission + "\\n\\n" + marker, 1)
+              source = source.replace(marker, permission + "\n\n" + marker, 1)
               manifest.write_text(source)
           if "android.permission.INTERNET" not in manifest.read_text():
               raise SystemExit("INTERNET permission was not added to AndroidManifest.xml")
