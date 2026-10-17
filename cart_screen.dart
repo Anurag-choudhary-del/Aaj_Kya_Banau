@@ -170,6 +170,8 @@ class _CheckoutBar extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 4),
+          const Text('Estimates only — not live Blinkit prices. Actual prices, pack sizes, availability and delivery fees may differ.', style: TextStyle(color: AppColors.muted, fontSize: 11)),
           const SizedBox(height: 12),
           FilledButton.icon(
             onPressed: !enabled
