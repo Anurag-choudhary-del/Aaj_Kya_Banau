@@ -48,6 +48,7 @@ jobs:
           cp grocery_item.dart lib/models/grocery_item.dart
           cp recipe.dart lib/models/recipe.dart
           cp kitchen_catalog.dart lib/data/kitchen_catalog.dart
+          cp planner_catalog.dart lib/data/planner_catalog.dart
           cp ingredient_recognition_service.dart lib/services/ingredient_recognition_service.dart
           cp widget_test.dart test/widget_test.dart
 
