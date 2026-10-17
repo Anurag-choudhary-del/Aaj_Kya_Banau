@@ -72,8 +72,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
               store.setEveningReminder(value);
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Text(value
-                  ? 'Reminder on hai. Scheduled notifications abhi configure nahi hain.'
-                  : 'Evening reminder off'),
+                  ? (store.language == 'Hindi' ? 'चुने गए खाने के रिमाइंडर चालू किए जा रहे हैं।' : store.language == 'Hinglish' ? 'Selected meals ke reminders on kiye ja rahe hain.' : 'Turning on reminders for selected meals.')
+                  : (store.language == 'Hindi' ? 'रिमाइंडर बंद हैं।' : store.language == 'Hinglish' ? 'Reminders off hain.' : 'Meal reminders are off.')),
               ));
             },
           ),
