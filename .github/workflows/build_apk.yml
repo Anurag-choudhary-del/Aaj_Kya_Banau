@@ -38,6 +38,25 @@ jobs:
         run: |
           set -euo pipefail
           flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
+
+          # Ensure release builds can reach the AI Worker over the internet.
+          # flutter create may regenerate Android files, so enforce this on every build.
+          python3 - <<'PY'
+          from pathlib import Path
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          source = manifest.read_text()
+          permission = '    <uses-permission android:name="android.permission.INTERNET" />'
+          if "android.permission.INTERNET" not in source:
+              marker = "    <application"
+              if marker not in source:
+                  raise SystemExit("Could not find <application> in AndroidManifest.xml")
+              source = source.replace(marker, permission + "\\n\\n" + marker, 1)
+              manifest.write_text(source)
+          if "android.permission.INTERNET" not in manifest.read_text():
+              raise SystemExit("INTERNET permission was not added to AndroidManifest.xml")
+          print("Verified Android INTERNET permission for release APK.")
+          PY
           mkdir -p lib/screens lib/state lib/theme lib/models lib/data lib/services test
           cp main.dart lib/main.dart
           cp main_shell.dart lib/screens/main_shell.dart
