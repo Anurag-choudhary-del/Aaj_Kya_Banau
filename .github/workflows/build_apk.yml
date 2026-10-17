@@ -73,7 +73,37 @@ jobs:
           for required in ("android.permission.INTERNET", "android.permission.POST_NOTIFICATIONS", "android.permission.RECEIVE_BOOT_COMPLETED", "ScheduledNotificationReceiver", "ScheduledNotificationBootReceiver"):
               if required not in verified:
                   raise SystemExit("Missing Android manifest requirement: " + required)
-          print("Verified internet and scheduled-notification Android manifest entries.")
+          # flutter_local_notifications requires Android core-library desugaring.
+          kts = Path("android/app/build.gradle.kts")
+          groovy = Path("android/app/build.gradle")
+          if kts.exists():
+              gradle_path = kts
+              gradle = kts.read_text()
+              if "isCoreLibraryDesugaringEnabled" not in gradle:
+                  if "compileOptions {" not in gradle:
+                      raise SystemExit("Could not find compileOptions in build.gradle.kts")
+                  gradle = gradle.replace("compileOptions {", "compileOptions {\\n        isCoreLibraryDesugaringEnabled = true", 1)
+              if "coreLibraryDesugaring(" not in gradle:
+                  if "dependencies {" not in gradle:
+                      raise SystemExit("Could not find dependencies in build.gradle.kts")
+                  gradle = gradle.replace("dependencies {", 'dependencies {\\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")', 1)
+          elif groovy.exists():
+              gradle_path = groovy
+              gradle = groovy.read_text()
+              if "coreLibraryDesugaringEnabled true" not in gradle:
+                  if "compileOptions {" not in gradle:
+                      raise SystemExit("Could not find compileOptions in build.gradle")
+                  gradle = gradle.replace("compileOptions {", "compileOptions {\\n        coreLibraryDesugaringEnabled true", 1)
+              if "coreLibraryDesugaring " not in gradle:
+                  if "dependencies {" not in gradle:
+                      raise SystemExit("Could not find dependencies in build.gradle")
+                  gradle = gradle.replace("dependencies {", "dependencies {\\n    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'", 1)
+          else:
+              raise SystemExit("Could not find app Gradle build file")
+          gradle_path.write_text(gradle)
+          if "desugar_jdk_libs:2.1.4" not in gradle_path.read_text():
+              raise SystemExit("Android core-library desugaring was not configured")
+          print("Verified internet, notification manifest entries, and Android desugaring.")
           PY
           mkdir -p lib/screens lib/state lib/theme lib/models lib/data lib/services test
           cp main.dart lib/main.dart
