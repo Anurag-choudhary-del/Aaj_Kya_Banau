@@ -71,6 +71,7 @@ class KitchenStore extends ChangeNotifier {
       'Dinner': 'रात का खाना',
       'Snacks': 'स्नैक्स',
       'Choose this meal': 'यह खाना चुनें',
+      'None — skip this meal': 'कोई नहीं — यह खाना छोड़ें',
       'Need to buy': 'खरीदना है',
       'In pantry': 'रसोई में है',
       'Grocery cart': 'किराना कार्ट',
@@ -196,6 +197,7 @@ class KitchenStore extends ChangeNotifier {
       'Dinner': 'Dinner',
       'Snacks': 'Snacks',
       'Choose this meal': 'Ye meal choose karo',
+      'None — skip this meal': 'None — ye meal skip karo',
       'Need to buy': 'Kharidna hai',
       'In pantry': 'Ghar mein hai',
       'Grocery cart': 'Grocery cart',
@@ -707,21 +709,29 @@ class KitchenStore extends ChangeNotifier {
   }
 
   Future<void> _refreshMealReminders() async {
-    final now = DateTime.now();
-    final tomorrow = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
-    String? chosen(String category) {
-      if (isPlannerMealNone(tomorrow, category)) return null;
-      final recipe = selectedPlannerMeal(tomorrow, category);
-      return recipe == null ? null : displayName(recipe.name);
+    final today = DateTime.now();
+    final start = DateTime(today.year, today.month, today.day);
+    final reminders = <MealReminder>[];
+    const categories = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'];
+    // Schedule ahead so reminders still fire when the app is not opened daily.
+    for (var offset = 0; offset <= 45; offset++) {
+      final date = start.add(Duration(days: offset));
+      for (final category in categories) {
+        if (isPlannerMealNone(date, category)) continue;
+        final recipe = selectedPlannerMeal(date, category);
+        // A suggested/default meal is not a user selection and must not notify.
+        if (recipe == null) continue;
+        reminders.add(MealReminder(
+          date: date,
+          category: category,
+          dish: displayName(recipe.name),
+        ));
+      }
     }
     await MealNotificationService.instance.schedule(
       enabled: eveningReminder,
-      now: now,
       language: language,
-      breakfast: chosen('Breakfast'),
-      lunch: chosen('Lunch'),
-      dinner: chosen('Dinner'),
-      snacks: chosen('Snacks'),
+      reminders: reminders,
     );
   }
 }
