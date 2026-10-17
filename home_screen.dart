@@ -170,22 +170,22 @@ class _ScanCta extends StatelessWidget {
                 child: const Icon(Icons.photo_camera_rounded, color: Colors.white, size: 28),
               ),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       store.t('Camera scan'),
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      'Take a photo or upload one for AI ingredient recognition',
-                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                      store.language == 'Hindi' ? 'AI से सामान पहचानने के लिए फोटो लें या अपलोड करें' : store.language == 'Hinglish' ? 'AI se ingredients pehchanne ke liye photo lo ya upload karo' : 'Take a photo or upload one for AI ingredient recognition',
+                      style: const TextStyle(color: Colors.white70, fontSize: 13),
                     ),
                   ],
                 ),
