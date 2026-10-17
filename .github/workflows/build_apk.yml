@@ -112,7 +112,22 @@ jobs:
           manifest.write_text(source)
           if 'android:label="Kitchen Saheli"' not in manifest.read_text():
               raise SystemExit("Kitchen Saheli app label was not applied")
-          print("Verified internet, notification manifest entries, Android desugaring, and app label.")
+          # A small warm cream, green and orange Kitchen Saheli launcher mark.
+          source = manifest.read_text().replace('android:icon="@mipmap/ic_launcher"', 'android:icon="@drawable/kitchen_saheli_icon"')
+          manifest.write_text(source)
+          icon_dir = Path("android/app/src/main/res/drawable")
+          icon_dir.mkdir(parents=True, exist_ok=True)
+          icon_xml = """<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+            <path android:fillColor="#FFF4D8" android:pathData="M0,0h108v108h-108z"/>
+            <path android:fillColor="#0D5143" android:pathData="M22,45h64v35c0,6 -4,10 -10,10h-44c-6,0 -10,-4 -10,-10z"/>
+            <path android:fillColor="#F45B20" android:pathData="M17,41h74v8h-74z"/>
+            <path android:fillColor="#FFFFFF" android:pathData="M32,33c0,-7 6,-12 13,-10c4,-9 16,-9 20,0c8,-2 14,4 14,11c0,5 -4,8 -9,8h-29c-5,0 -9,-4 -9,-9z"/>
+            <path android:fillColor="#F5A900" android:pathData="M40,58h28v5h-28z M40,69h28v5h-28z"/>
+          </vector>"""
+          (icon_dir / "kitchen_saheli_icon.xml").write_text(icon_xml)
+          if 'android:icon="@drawable/kitchen_saheli_icon"' not in manifest.read_text():
+              raise SystemExit("Kitchen Saheli launcher icon was not applied")
+          print("Verified internet, notification manifest entries, Android desugaring, app label, and launcher icon.")
           PY
           mkdir -p lib/screens lib/state lib/theme lib/models lib/data lib/services test
           cp main.dart lib/main.dart
