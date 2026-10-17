@@ -16,15 +16,15 @@ class CartScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 16, 20, 4),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
             child: Text(
               store.t('Grocery cart'),
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
               store.language == 'Hindi' ? 'मात्रा और स्थानीय बाज़ार के अनुमानित दाम' : store.language == 'Hinglish' ? 'Quantity aur local market ke estimated rates' : 'Quantities and indicative local-market estimates',
               style: const TextStyle(color: AppColors.muted),
@@ -227,7 +227,7 @@ class _CheckoutBar extends StatelessWidget {
             Text(
               store.language == 'Hindi' ? 'इस कार्ट में स्थानीय बाज़ार के अनुमानित दाम हैं। यह Blinkit को सामान नहीं भेज सकता और ऑर्डर या पेमेंट नहीं करेगा। लाइव दाम देखने और सामान जोड़ने के लिए Blinkit अलग से खोलें।' : store.language == 'Hinglish' ? 'Is cart mein local market ke estimated rates hain. Ye Blinkit par items bhej ya order place nahi kar sakta. Live prices check karne ke liye Blinkit alag se kholo.' : 'This cart uses estimated local-market prices. It cannot send items to Blinkit or place an order. Open Blinkit separately to check live prices and add items.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted),
+              style: const TextStyle(color: AppColors.muted),
             ),
             const SizedBox(height: 18),
             SizedBox(
