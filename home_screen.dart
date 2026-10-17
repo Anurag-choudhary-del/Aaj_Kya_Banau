@@ -130,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 16),
           if (store.pantry.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 40),
               child: Center(child: Text(store.t('Pantry is empty — scan or add items'))),
             )
