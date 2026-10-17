@@ -111,15 +111,98 @@ class PlannerCatalog {
     ],
   };
 
+  // Extra regional dishes keep each category's five choices regionally varied.
+  static const regionalExtras = <String, List<Recipe>>{
+    'Breakfast': [
+      Recipe(id: 'b-dosa', name: 'Plain Dosa with Chutney', tagline: 'South Indian rice-and-lentil crepe', emoji: '🥞', minutes: 25, ingredients: [
+        RecipeIngredient(name: 'Dosa batter', emoji: '🥣', amount: '2 cups'), RecipeIngredient(name: 'Coconut', emoji: '🥥', amount: '1/4'), RecipeIngredient(name: 'Oil', emoji: '🫙', amount: '1 tsp'),
+      ]),
+      Recipe(id: 'b-luchi', name: 'Luchi with Alur Dom', tagline: 'Bengali puffed bread with potato curry', emoji: '🫓', minutes: 35, ingredients: [
+        RecipeIngredient(name: 'Atta', emoji: '🌾', amount: '1 cup'), RecipeIngredient(name: 'Potato', emoji: '🥔', amount: '2'), RecipeIngredient(name: 'Tomato', emoji: '🍅', amount: '1'), RecipeIngredient(name: 'Oil', emoji: '🫙', amount: 'for cooking'),
+      ]),
+      Recipe(id: 'b-dhokla', name: 'Gujarati Dhokla', tagline: 'Soft steamed gram-flour snack for breakfast', emoji: '🟨', minutes: 25, ingredients: [
+        RecipeIngredient(name: 'Besan', emoji: '🌾', amount: '1 cup'), RecipeIngredient(name: 'Curd', emoji: '🥛', amount: '1/2 cup'), RecipeIngredient(name: 'Lemon', emoji: '🍋', amount: '1/2'), RecipeIngredient(name: 'Green chilli', emoji: '🌶️', amount: '1'),
+      ]),
+    ],
+    'Lunch': [
+      Recipe(id: 'l-lemon-rice', name: 'South Indian Lemon Rice', tagline: 'Budget-friendly tangy rice with peanuts', emoji: '🍋', minutes: 20, ingredients: [
+        RecipeIngredient(name: 'Rice', emoji: '🍚', amount: '1 cup'), RecipeIngredient(name: 'Lemon', emoji: '🍋', amount: '1'), RecipeIngredient(name: 'Peanuts', emoji: '🥜', amount: '2 tbsp'), RecipeIngredient(name: 'Turmeric', emoji: '🌼', amount: '1/2 tsp'),
+      ]),
+      Recipe(id: 'l-cholar-dal', name: 'Bengali Cholar Dal with Rice', tagline: 'Bengali-style chickpea dal and rice', emoji: '🍛', minutes: 35, ingredients: [
+        RecipeIngredient(name: 'Chickpeas', emoji: '🫘', amount: '1 cup'), RecipeIngredient(name: 'Rice', emoji: '🍚', amount: '1 cup'), RecipeIngredient(name: 'Potato', emoji: '🥔', amount: '1'), RecipeIngredient(name: 'Ginger', emoji: '🫚', amount: '1 tsp'),
+      ]),
+    ],
+    'Dinner': [
+      Recipe(id: 'd-curd-rice', name: 'South Indian Curd Rice', tagline: 'Cooling rice and curd dinner', emoji: '🥣', minutes: 15, ingredients: [
+        RecipeIngredient(name: 'Rice', emoji: '🍚', amount: '1 cup'), RecipeIngredient(name: 'Curd', emoji: '🥛', amount: '1 cup'), RecipeIngredient(name: 'Coriander', emoji: '🌿', amount: 'to garnish'),
+      ]),
+      Recipe(id: 'd-bengali-aloo', name: 'Bengali Aloo Dum with Rice', tagline: 'Potato and tomato curry with rice', emoji: '🥔', minutes: 30, ingredients: [
+        RecipeIngredient(name: 'Potato', emoji: '🥔', amount: '3'), RecipeIngredient(name: 'Tomato', emoji: '🍅', amount: '1'), RecipeIngredient(name: 'Onion', emoji: '🧅', amount: '1'), RecipeIngredient(name: 'Rice', emoji: '🍚', amount: '1 cup'),
+      ]),
+      Recipe(id: 'd-pav-bhaji', name: 'Mumbai Pav Bhaji', tagline: 'West Indian mixed vegetable bhaji with bread', emoji: '🍲', minutes: 35, ingredients: [
+        RecipeIngredient(name: 'Potato', emoji: '🥔', amount: '2'), RecipeIngredient(name: 'Tomato', emoji: '🍅', amount: '2'), RecipeIngredient(name: 'Peas', emoji: '🫛', amount: '1/2 cup'), RecipeIngredient(name: 'Bread', emoji: '🍞', amount: '2 buns'), RecipeIngredient(name: 'Butter', emoji: '🧈', amount: '1 tbsp'),
+      ]),
+    ],
+    'Snacks': [
+      Recipe(id: 's-sundal', name: 'South Indian Sundal', tagline: 'Simple chickpea and coconut snack', emoji: '🥥', minutes: 15, ingredients: [
+        RecipeIngredient(name: 'Chickpeas', emoji: '🫘', amount: '1 cup'), RecipeIngredient(name: 'Coconut', emoji: '🥥', amount: '2 tbsp'), RecipeIngredient(name: 'Lemon', emoji: '🍋', amount: '1/2'), RecipeIngredient(name: 'Salt', emoji: '🧂', amount: 'to taste'),
+      ]),
+      Recipe(id: 's-jhal-muri', name: 'Bengali Jhal Muri', tagline: 'Puffed rice tossed with onion and tomato', emoji: '🥣', minutes: 10, ingredients: [
+        RecipeIngredient(name: 'Puffed rice', emoji: '🍚', amount: '2 cups'), RecipeIngredient(name: 'Onion', emoji: '🧅', amount: '1/2'), RecipeIngredient(name: 'Tomato', emoji: '🍅', amount: '1/2'), RecipeIngredient(name: 'Peanuts', emoji: '🥜', amount: '2 tbsp'),
+      ]),
+      Recipe(id: 's-dhokla', name: 'Gujarati Dhokla Bites', tagline: 'Steamed besan bites with lemon', emoji: '🟨', minutes: 20, ingredients: [
+        RecipeIngredient(name: 'Besan', emoji: '🌾', amount: '1 cup'), RecipeIngredient(name: 'Curd', emoji: '🥛', amount: '1/2 cup'), RecipeIngredient(name: 'Lemon', emoji: '🍋', amount: '1/2'), RecipeIngredient(name: 'Green chilli', emoji: '🌶️', amount: '1'),
+      ]),
+    ],
+  };
+
+  static List<Recipe> get allRecipes => [
+    for (final recipes in categories.values) ...recipes,
+    for (final recipes in regionalExtras.values) ...recipes,
+  ];
+
+  static const _regionalIds = <String, Map<String, List<String>>>{
+    'Breakfast': {
+      'South Indian': ['b-idli', 'b-upma', 'b-dosa'],
+      'North Indian': ['b-paratha', 'b-chilla'],
+      'East Indian': ['b-luchi', 'b-dalia'],
+      'West Indian': ['b-poha', 'b-dhokla'],
+      'Complementary': ['b-egg', 'b-sandwich'],
+    },
+    'Lunch': {
+      'South Indian': ['l-lemon-rice', 'l-dal-rice'],
+      'North Indian': ['l-rajma', 'l-aloo-gobi'],
+      'East Indian': ['l-cholar-dal', 'l-chole'],
+      'West Indian': ['l-kadhi', 'l-mixveg'],
+      'Complementary': ['l-bhindi', 'l-soya'],
+    },
+    'Dinner': {
+      'South Indian': ['d-khichdi', 'd-curd-rice'],
+      'North Indian': ['d-aloojeera', 'd-masoor'],
+      'East Indian': ['d-bengali-aloo', 'd-lauki'],
+      'West Indian': ['d-pav-bhaji', 'd-cabbage'],
+      'Complementary': ['d-egg', 'd-kala-chana', 'd-veg-pulao'],
+    },
+    'Snacks': {
+      'South Indian': ['s-sprouts', 's-sundal'],
+      'North Indian': ['s-chana', 's-dahi'],
+      'East Indian': ['s-bhel', 's-jhal-muri'],
+      'West Indian': ['s-peanut', 's-dhokla'],
+      'Complementary': ['s-makhana', 's-corn', 's-sandwich'],
+    },
+  };
+
   static List<Recipe> optionsForDay(String category, int day) {
-    final all = categories[category] ?? const <Recipe>[];
-    if (all.length <= 5) return all;
-    final start = (day - 1) % all.length;
-    return List<Recipe>.generate(5, (i) => all[(start + i) % all.length]);
+    final byId = {for (final recipe in allRecipes) recipe.id: recipe};
+    final regions = _regionalIds[category];
+    if (regions == null) return const [];
+    return [
+      for (final region in ['South Indian', 'North Indian', 'East Indian', 'West Indian', 'Complementary'])
+        byId[regions[region]![(day - 1) % regions[region]!.length]]!,
+    ];
   }
 
   static Recipe defaultForDay(String category, int day) {
-    final options = categories[category]!;
-    return options[(day - 1) % options.length];
+    return optionsForDay(category, day).first;
   }
 }
