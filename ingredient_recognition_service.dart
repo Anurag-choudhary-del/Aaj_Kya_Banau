@@ -4,7 +4,11 @@ import 'package:http/http.dart' as http;
 class IngredientRecognitionService {
   static const String _baseUrl = String.fromEnvironment('AI_API_BASE_URL');
 
-  Future<List<Map<String, String>>> recognize(String imageBase64, String mimeType) async {
+  Future<List<Map<String, String>>> recognize(
+    String imageBase64,
+    String mimeType, {
+    String language = 'English',
+  }) async {
     if (_baseUrl.isEmpty) {
       throw Exception('AI service abhi configure nahi hai. GitHub mein AI_API_BASE_URL variable aur backend secrets set karne honge.');
     }
@@ -15,7 +19,11 @@ class IngredientRecognitionService {
     final response = await http.post(
       uri,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'imageBase64': imageBase64, 'mimeType': mimeType}),
+      body: jsonEncode({
+        'imageBase64': imageBase64,
+        'mimeType': mimeType,
+        'language': ['English', 'Hinglish', 'Hindi'].contains(language) ? language : 'English',
+      }),
     ).timeout(const Duration(seconds: 60));
     if (response.statusCode != 200) {
       String message = 'AI photo process nahi kar saka (HTTP ${response.statusCode}).';
@@ -34,7 +42,14 @@ class IngredientRecognitionService {
       if (value is! Map || value['name'] is! String) continue;
       final name = (value['name'] as String).trim();
       if (name.isEmpty || name.length > 60) continue;
-      result.add({'name': name, 'emoji': value['emoji'] is String ? value['emoji'] as String : '🥬'});
+      final displayName = value['displayName'] is String
+          ? (value['displayName'] as String).trim()
+          : name;
+      result.add({
+        'name': name,
+        'displayName': displayName.isEmpty ? name : displayName,
+        'emoji': value['emoji'] is String ? value['emoji'] as String : '🥬',
+      });
     }
     return result;
   }
