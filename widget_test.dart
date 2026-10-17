@@ -14,7 +14,7 @@ void main() {
 
     await tester.tap(find.text('Recipes'));
     await tester.pumpAndSettle();
-    expect(find.text('AI recipe suggestions'), findsOneWidget);
+    expect(find.text('Recipe suggestions'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Paneer Butter Masala'),
       300,
