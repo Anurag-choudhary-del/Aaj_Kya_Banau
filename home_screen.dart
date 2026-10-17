@@ -54,9 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Aaj kya banau?',
-            style: TextStyle(
+          Text(
+            store.t('Aaj kya banau?'),
+            style: const TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.w800,
               color: AppColors.ink,
@@ -85,8 +85,8 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             children: [
               const Text(
-                'Your pantry',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                store.t('Your pantry'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
               ),
               const Spacer(),
               Text(
@@ -107,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _controller.clear();
             },
             decoration: InputDecoration(
-              hintText: 'Add an item…  e.g. Methi',
+              hintText: store.t('Add an item…  e.g. Methi'),
               filled: true,
               fillColor: Colors.white,
               prefixIcon: const Icon(Icons.add_rounded),
@@ -128,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
           if (store.pantry.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 40),
-              child: Center(child: Text('Pantry is empty — scan or add items')),
+              child: Center(child: Text(store.t('Pantry is empty — scan or add items'))),
             )
           else
             ...store.pantry.map((item) => _PantryTile(item: item)),
@@ -145,6 +145,7 @@ class _ScanCta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final store = context.watch<KitchenStore>();
     return Material(
       color: AppColors.ink,
       borderRadius: BorderRadius.circular(24),
@@ -170,7 +171,7 @@ class _ScanCta extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Camera scan',
+                      store.t('Camera scan'),
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -235,7 +236,7 @@ class _PantryTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.name,
+                    context.watch<KitchenStore>().displayName(item.name),
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                   ),
                   Text(
