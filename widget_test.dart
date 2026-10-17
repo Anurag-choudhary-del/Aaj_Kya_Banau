@@ -32,12 +32,12 @@ void main() {
     expect(find.text('Grocery cart'), findsOneWidget);
     expect(find.text('Blinkit Delivery'), findsOneWidget);
   });
+
+  test('planner offers five choices for every meal category', () {
+    expect(PlannerCatalog.categories.keys.toSet(), {'Breakfast', 'Lunch', 'Dinner', 'Snacks'});
+    for (final category in PlannerCatalog.categories.keys) {
+      expect(PlannerCatalog.optionsForDay(category, 17), hasLength(5));
+    }
+  });
+
 }
-
-
-test('planner offers five choices for every meal category', () {
-  expect(PlannerCatalog.categories.keys.toSet(), {'Breakfast', 'Lunch', 'Dinner', 'Snacks'});
-  for (final category in PlannerCatalog.categories.keys) {
-    expect(PlannerCatalog.optionsForDay(category, 17), hasLength(5));
-  }
-});
