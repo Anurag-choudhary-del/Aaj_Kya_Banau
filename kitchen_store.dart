@@ -33,6 +33,7 @@ class KitchenStore extends ChangeNotifier {
   final List<PantryItem> _pantry = [];
   final List<GroceryItem> _cart = [];
   final Map<String, Map<String, Recipe>> _plansByMonth = {};
+  final Map<String, Map<String, Recipe>> _plannerSelections = {};
   bool eveningReminder = false;
   bool _pantryLoaded = false;
 
@@ -62,6 +63,15 @@ class KitchenStore extends ChangeNotifier {
       plan[dateKey(DateTime(month.year, month.month, day))] = recipes[index];
     }
     return plan;
+  }
+
+  Recipe? selectedPlannerMeal(DateTime date, String category) {
+    return _plannerSelections[dateKey(date)]?[category];
+  }
+
+  void selectPlannerMeal(DateTime date, String category, Recipe recipe) {
+    _plannerSelections.putIfAbsent(dateKey(date), () => <String, Recipe>{})[category] = recipe;
+    notifyListeners();
   }
 
   void ensureMonthlyPlan(DateTime month) {
