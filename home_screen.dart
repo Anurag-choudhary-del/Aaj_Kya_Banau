@@ -65,7 +65,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '${store.pantry.length} items in your pantry · scan or upload a photo to add more',
+            store.language == 'Hindi'
+                ? 'आपकी रसोई में ${store.pantry.length} सामान · फोटो स्कैन करके और जोड़ें'
+                : store.language == 'Hinglish'
+                    ? '${store.pantry.length} items tumhari rasoi mein · photo scan karke aur add karo'
+                    : '${store.pantry.length} items in your pantry · scan or upload a photo to add more',
             style: const TextStyle(color: AppColors.muted),
           ),
           const SizedBox(height: 20),
@@ -76,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
               );
               if (added == true && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Scanned items added to pantry')),
+                  SnackBar(content: Text(store.language == 'Hindi' ? 'स्कैन किया गया सामान रसोई में जोड़ दिया' : store.language == 'Hinglish' ? 'Scanned items pantry mein add ho gaye' : 'Scanned items added to pantry')),
                 );
               }
             },
