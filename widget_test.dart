@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:aaj_kya_banau/main.dart';
 import 'package:aaj_kya_banau/data/planner_catalog.dart';
+import 'package:aaj_kya_banau/models/grocery_item.dart';
 
 void main() {
   testWidgets('home pantry and navigation load with an empty pantry', (tester) async {
@@ -40,4 +41,22 @@ void main() {
     }
   });
 
+}
+
+
+void mainPackSizeTests() {
+  test('grocery pack size is included in line total', () {
+    const potato = GroceryItem(
+      id: 'potato',
+      name: 'Potato',
+      emoji: '🥔',
+      quantity: 1,
+      unit: 'kg',
+      price: 30,
+      packSize: 10,
+    );
+    expect(potato.lineTotal, 300);
+    expect(potato.copyWith(quantity: 2).lineTotal, 600);
+    expect(potato.copyWith(packSize: 5).lineTotal, 150);
+  });
 }
