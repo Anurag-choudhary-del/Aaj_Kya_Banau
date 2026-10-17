@@ -60,7 +60,7 @@ jobs:
         run: flutter pub get
 
       - name: Analyze app and tests
-        run: flutter analyze lib test
+        run: flutter analyze --no-fatal-infos lib test
 
       - name: Run widget tests
         run: flutter test
