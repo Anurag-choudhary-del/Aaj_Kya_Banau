@@ -35,7 +35,13 @@ export default {
       return json({ error: "Valid JPG, PNG ya WEBP photo upload karo (size 9 MB ke aas-paas ya kam rakho)." }, 400);
     }
 
-    const prompt = 'Identify only clearly visible food ingredients in this kitchen/pantry photo. Return ONLY JSON: {"items":[{"name":"Tomato","emoji":"🍅"}]}. Use short common English ingredient names and relevant emoji. Do not guess hidden items or return dishes, utensils, text, or background objects. If none are clear, return {"items":[]}. Maximum 20 distinct ingredients.';
+    const language = ["English", "Hindi", "Hinglish"].includes(body?.language) ? body.language : "English";
+    const labelLanguage = language === "Hindi"
+      ? "Hindi in Devanagari script"
+      : language === "Hinglish"
+        ? "natural Hinglish written in Latin script"
+        : "English";
+    const prompt = `Identify only clearly visible food ingredients in this kitchen/pantry photo. Return ONLY JSON with this shape: {"items":[{"name":"Tomato","displayName":"Tomato","emoji":"🍅"}]}. The "name" field MUST be a short, common, singular English ingredient name for stable recipe matching. The "displayName" field MUST be the same ingredient expressed in ${labelLanguage}. Keep the canonical English name in "name" even when the display language is Hindi or Hinglish. Use relevant emoji. Do not guess hidden items or return dishes, utensils, text, or background objects. If none are clear, return {"items":[]}. Maximum 20 distinct ingredients.`;
     let upstream;
     try {
       upstream = await fetch("https://api.openai.com/v1/responses", {
@@ -71,7 +77,14 @@ export default {
         const name = item.name.trim().slice(0, 60);
         if (!name) continue;
         const key = name.toLocaleLowerCase();
-        if (!unique.has(key)) unique.set(key, { name, emoji: typeof item.emoji === "string" ? item.emoji.slice(0, 8) : "🥬" });
+        const displayName = typeof item.displayName === "string" && item.displayName.trim()
+          ? item.displayName.trim().slice(0, 60)
+          : name;
+        if (!unique.has(key)) unique.set(key, {
+          name,
+          displayName,
+          emoji: typeof item.emoji === "string" ? item.emoji.slice(0, 8) : "🥬"
+        });
       }
       return json({ items: [...unique.values()].slice(0, 20) });
     } catch (_) { return json({ error: "AI response parse nahi hua. Dobara photo try karo." }, 502); }
