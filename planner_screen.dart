@@ -80,9 +80,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
               onSelect: (category, recipe) => _showRecipeDetails(context, DateTime(_visibleMonth.year, _visibleMonth.month, day), category, recipe),
             ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             context.watch<KitchenStore>().language == 'Hindi' ? 'ये बजट के हिसाब से घर पर बनने वाले खाने के सुझाव हैं। दाम और मौसमी उपलब्धता बदल सकती है; चुने गए विकल्प ऐप खुला रहने तक सेव रहते हैं।' : context.watch<KitchenStore>().language == 'Hinglish' ? 'Ye budget-friendly home cooking ideas hain. Prices aur seasonal availability badal sakti hai; selections app open rehne tak save hain.' : 'Meal ideas are budget-conscious home-cooking suggestions. Prices and seasonal availability vary; chosen options stay selected while the app remains open.',
-            style: TextStyle(color: AppColors.muted, fontSize: 12),
+            style: const TextStyle(color: AppColors.muted, fontSize: 12),
           ),
           if (existingPlan.isEmpty) const SizedBox.shrink(),
         ],
@@ -168,6 +168,7 @@ class _ReminderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final store = context.watch<KitchenStore>();
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -181,13 +182,13 @@ class _ReminderCard extends StatelessWidget {
           child: const Icon(Icons.notifications_active_outlined, color: AppColors.deepSpice),
         ),
         const SizedBox(width: 12),
-        const Expanded(child: Column(
+        Expanded(child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(context.watch<KitchenStore>().t('Evening reminder'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-            SizedBox(height: 2),
+            Text(store.t('Evening reminder'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            const SizedBox(height: 2),
             Text(
-              context.watch<KitchenStore>().language == 'Hindi' ? 'रिमाइंडर का विकल्प (अभी नोटिफिकेशन शेड्यूल नहीं होते)' : context.watch<KitchenStore>().language == 'Hinglish' ? 'Reminder toggle (notifications abhi schedule nahi hote)' : 'Reminder toggle (scheduled notifications not yet enabled)',
+              store.language == 'Hindi' ? 'रिमाइंडर का विकल्प (अभी नोटिफिकेशन शेड्यूल नहीं होते)' : store.language == 'Hinglish' ? 'Reminder toggle (notifications abhi schedule nahi hote)' : 'Reminder toggle (scheduled notifications not yet enabled)',
               style: const TextStyle(color: AppColors.muted, fontSize: 12),
             ),
           ],
