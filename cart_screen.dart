@@ -16,30 +16,30 @@ class CartScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 16, 20, 4),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
             child: Text(
-              'Grocery cart',
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+              store.t('Grocery cart'),
+              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              'Missing ingredients collected from recipes',
-              style: TextStyle(color: AppColors.muted),
+              store.language == 'Hindi' ? 'मात्रा और स्थानीय बाज़ार के अनुमानित दाम' : store.language == 'Hinglish' ? 'Quantity aur local market ke estimated rates' : 'Quantities and indicative local-market estimates',
+              style: const TextStyle(color: AppColors.muted),
             ),
           ),
           const SizedBox(height: 12),
           Expanded(
             child: store.cart.isEmpty
-                ? const Center(
+                ? Center(
                     child: Padding(
-                      padding: EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(32),
                       child: Text(
-                        'Cart is empty.\nAdd missing items from the Recipes tab.',
+                        store.t('Cart is empty.\nAdd missing items from the Recipes tab.'),
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.muted, height: 1.4),
+                        style: const TextStyle(color: AppColors.muted, height: 1.4),
                       ),
                     ),
                   )
@@ -84,11 +84,25 @@ class _CartTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.name, style: const TextStyle(fontWeight: FontWeight.w800)),
+                Text(store.displayName(item.name), style: const TextStyle(fontWeight: FontWeight.w800)),
                 Text(
-                  '₹${item.price} · missing from pantry',
+                  '₹${item.price}/${item.unitLabel} estimated · line total ₹${item.lineTotal}',
                   style: const TextStyle(color: AppColors.missing, fontSize: 12, fontWeight: FontWeight.w600),
                 ),
+                if (item.unit == 'kg')
+                  DropdownButton<int>(
+                    value: item.packSize,
+                    isDense: true,
+                    underline: const SizedBox.shrink(),
+                    items: [
+                      DropdownMenuItem(value: 1, child: Text(store.t('Pack: 1 kg'))),
+                      DropdownMenuItem(value: 5, child: Text(store.t('Pack: 5 kg'))),
+                      DropdownMenuItem(value: 10, child: Text(store.t('Pack: 10 kg'))),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) store.changeCartPackSize(item.id, value);
+                    },
+                  ),
               ],
             ),
           ),
@@ -99,8 +113,10 @@ class _CartTile extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
-              '${item.quantity}',
-              style: const TextStyle(fontWeight: FontWeight.w800),
+              item.unit == 'kg'
+                  ? '${item.quantity} × ${item.packSize} kg'
+                  : '${item.quantity} ${item.unitLabel}',
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
             ),
           ),
           _QtyButton(
@@ -145,6 +161,7 @@ class _CheckoutBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final store = context.watch<KitchenStore>();
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
       decoration: BoxDecoration(
@@ -162,7 +179,7 @@ class _CheckoutBar extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text('Estimated total', style: TextStyle(color: AppColors.muted)),
+              Text(store.t('Estimated total'), style: const TextStyle(color: AppColors.muted)),
               const Spacer(),
               Text(
                 '₹$total',
@@ -170,13 +187,15 @@ class _CheckoutBar extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 4),
+          Text(store.language == 'Hindi' ? 'ये अनुमान हैं, Blinkit के लाइव दाम नहीं। असली दाम, पैक, उपलब्धता और डिलीवरी फीस अलग हो सकती है।' : store.language == 'Hinglish' ? 'Ye estimates hain, live Blinkit prices nahi. Actual price, pack aur delivery fee alag ho sakti hai.' : 'Estimates only — not live Blinkit prices. Actual prices, pack sizes, availability and delivery fees may differ.', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
           const SizedBox(height: 12),
           FilledButton.icon(
             onPressed: !enabled
                 ? null
                 : () => _placeBlinkitOrder(context),
             icon: const Icon(Icons.bolt_rounded),
-            label: const Text('Blinkit Delivery'),
+            label: Text(store.language == 'Hindi' ? 'Blinkit (कनेक्ट नहीं है)' : store.language == 'Hinglish' ? 'Blinkit (connected nahi)' : 'Blinkit (not connected)'),
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF0D9B4D),
               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -192,43 +211,35 @@ class _CheckoutBar extends StatelessWidget {
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('⚡', style: TextStyle(fontSize: 40)),
-              const SizedBox(height: 8),
-              const Text(
-                'Blinkit Delivery',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('⚡', style: TextStyle(fontSize: 40)),
+            const SizedBox(height: 8),
+            Text(
+              store.language == 'Hindi' ? 'Blinkit ऑर्डरिंग कनेक्ट नहीं है' : store.language == 'Hinglish' ? 'Blinkit ordering connected nahi hai' : 'Blinkit ordering is not connected',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              store.language == 'Hindi' ? 'इस कार्ट में स्थानीय बाज़ार के अनुमानित दाम हैं। यह Blinkit को सामान नहीं भेज सकता और ऑर्डर या पेमेंट नहीं करेगा। लाइव दाम देखने और सामान जोड़ने के लिए Blinkit अलग से खोलें।' : store.language == 'Hinglish' ? 'Is cart mein local market ke estimated rates hain. Ye Blinkit par items bhej ya order place nahi kar sakta. Live prices check karne ke liye Blinkit alag se kholo.' : 'This cart uses estimated local-market prices. It cannot send items to Blinkit or place an order. Open Blinkit separately to check live prices and add items.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.muted),
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(store.language == 'Hindi' ? 'समझ गया' : store.language == 'Hinglish' ? 'Theek hai' : 'Got it'),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Your missing groceries (₹${store.cartTotal}) will arrive in 10 minutes. This is a demo checkout.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.muted),
-              ),
-              const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: const Color(0xFF0D9B4D)),
-                  onPressed: () {
-                    store.clearCart();
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Order placed with Blinkit. Arriving in 10 min!')),
-                    );
-                  },
-                  child: const Text('Confirm order'),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

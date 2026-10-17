@@ -17,7 +17,7 @@ class AajKyaBanauApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => KitchenStore(),
       child: MaterialApp(
-        title: 'Aaj Kya Banau',
+        title: 'Kitchen Saheli',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light(),
         home: const MainShell(),

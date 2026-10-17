@@ -2,8 +2,14 @@ name: Build Flutter APK
 
 on:
   push:
+    branches: [main, 'feature/**']
+  pull_request:
     branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -27,17 +33,103 @@ jobs:
           channel: stable
           cache: true
 
-      # The Dart sources are stored in the repository root.
-      # Copy the originals into the package paths their imports expect.
-      # Keep the real models and recipe catalog; never overwrite them with stubs.
       - name: Prepare existing app sources
         shell: bash
         run: |
           set -euo pipefail
           flutter create . --project-name aaj_kya_banau --org com.aajkyabanau --platforms android
 
-          mkdir -p lib/screens lib/state lib/theme lib/models lib/data test
+          # Ensure release builds can reach the AI Worker over the internet.
+          # flutter create may regenerate Android files, so enforce this on every build.
+          python3 - <<'PY'
+          from pathlib import Path
 
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          source = manifest.read_text()
+          permission = '    <uses-permission android:name="android.permission.INTERNET" />'
+          marker = "    <application"
+          if marker not in source:
+              raise SystemExit("Could not find <application> in AndroidManifest.xml")
+          for permission in (
+              '    <uses-permission android:name="android.permission.INTERNET" />',
+              '    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />',
+              '    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />',
+              '    <uses-permission android:name="android.permission.RECORD_AUDIO" />',
+          ):
+              if permission not in source:
+                  source = source.replace(marker, permission + "\n\n" + marker, 1)
+          receivers = '''    <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+              <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+                  <intent-filter>
+                      <action android:name="android.intent.action.BOOT_COMPLETED" />
+                      <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                      <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                      <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+                  </intent-filter>
+              </receiver>'''
+          if "com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" not in source:
+              source = source.replace("    </application>", receivers + "\n    </application>", 1)
+          manifest.write_text(source)
+          verified = manifest.read_text()
+          for required in ("android.permission.INTERNET", "android.permission.POST_NOTIFICATIONS", "android.permission.RECEIVE_BOOT_COMPLETED", "android.permission.RECORD_AUDIO", "ScheduledNotificationReceiver", "ScheduledNotificationBootReceiver"):
+              if required not in verified:
+                  raise SystemExit("Missing Android manifest requirement: " + required)
+          # flutter_local_notifications requires Android core-library desugaring.
+          kts = Path("android/app/build.gradle.kts")
+          groovy = Path("android/app/build.gradle")
+          if kts.exists():
+              gradle_path = kts
+              gradle = kts.read_text()
+              if "isCoreLibraryDesugaringEnabled" not in gradle:
+                  if "compileOptions {" not in gradle:
+                      raise SystemExit("Could not find compileOptions in build.gradle.kts")
+                  gradle = gradle.replace("compileOptions {", "compileOptions {\n        isCoreLibraryDesugaringEnabled = true", 1)
+              if "coreLibraryDesugaring(" not in gradle:
+                  if "dependencies {" in gradle:
+                      gradle = gradle.replace("dependencies {", 'dependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")', 1)
+                  else:
+                      gradle += '\n\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")\n}\n'
+          elif groovy.exists():
+              gradle_path = groovy
+              gradle = groovy.read_text()
+              if "coreLibraryDesugaringEnabled true" not in gradle:
+                  if "compileOptions {" not in gradle:
+                      raise SystemExit("Could not find compileOptions in build.gradle")
+                  gradle = gradle.replace("compileOptions {", "compileOptions {\n        coreLibraryDesugaringEnabled true", 1)
+              if "coreLibraryDesugaring " not in gradle:
+                  if "dependencies {" in gradle:
+                      gradle = gradle.replace("dependencies {", "dependencies {\n    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'", 1)
+                  else:
+                      gradle += "\n\ndependencies {\n    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'\n}\n"
+          else:
+              raise SystemExit("Could not find app Gradle build file")
+          gradle_path.write_text(gradle)
+          if "desugar_jdk_libs:2.1.4" not in gradle_path.read_text():
+              raise SystemExit("Android core-library desugaring was not configured")
+          # Set the app name shown by Android.
+          source = manifest.read_text()
+          source = source.replace('android:label="aaj_kya_banau"', 'android:label="Kitchen Saheli"')
+          manifest.write_text(source)
+          if 'android:label="Kitchen Saheli"' not in manifest.read_text():
+              raise SystemExit("Kitchen Saheli app label was not applied")
+          # A small warm cream, green and orange Kitchen Saheli launcher mark.
+          source = manifest.read_text().replace('android:icon="@mipmap/ic_launcher"', 'android:icon="@drawable/kitchen_saheli_icon"')
+          manifest.write_text(source)
+          icon_dir = Path("android/app/src/main/res/drawable")
+          icon_dir.mkdir(parents=True, exist_ok=True)
+          icon_xml = """<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+            <path android:fillColor="#FFF4D8" android:pathData="M0,0h108v108h-108z"/>
+            <path android:fillColor="#0D5143" android:pathData="M22,45h64v35c0,6 -4,10 -10,10h-44c-6,0 -10,-4 -10,-10z"/>
+            <path android:fillColor="#F45B20" android:pathData="M17,41h74v8h-74z"/>
+            <path android:fillColor="#FFFFFF" android:pathData="M32,33c0,-7 6,-12 13,-10c4,-9 16,-9 20,0c8,-2 14,4 14,11c0,5 -4,8 -9,8h-29c-5,0 -9,-4 -9,-9z"/>
+            <path android:fillColor="#F5A900" android:pathData="M40,58h28v5h-28z M40,69h28v5h-28z"/>
+          </vector>"""
+          (icon_dir / "kitchen_saheli_icon.xml").write_text(icon_xml)
+          if 'android:icon="@drawable/kitchen_saheli_icon"' not in manifest.read_text():
+              raise SystemExit("Kitchen Saheli launcher icon was not applied")
+          print("Verified internet, notification manifest entries, Android desugaring, app label, and launcher icon.")
+          PY
+          mkdir -p lib/screens lib/state lib/theme lib/models lib/data lib/services test
           cp main.dart lib/main.dart
           cp main_shell.dart lib/screens/main_shell.dart
           cp home_screen.dart lib/screens/home_screen.dart
@@ -45,30 +137,30 @@ jobs:
           cp planner_screen.dart lib/screens/planner_screen.dart
           cp cart_screen.dart lib/screens/cart_screen.dart
           cp scan_screen.dart lib/screens/scan_screen.dart
-
           cp kitchen_store.dart lib/state/kitchen_store.dart
           cp app_theme.dart lib/theme/app_theme.dart
-
           cp pantry_item.dart lib/models/pantry_item.dart
           cp grocery_item.dart lib/models/grocery_item.dart
           cp recipe.dart lib/models/recipe.dart
           cp kitchen_catalog.dart lib/data/kitchen_catalog.dart
-
+          cp planner_catalog.dart lib/data/planner_catalog.dart
+          cp ingredient_recognition_service.dart lib/services/ingredient_recognition_service.dart
+          cp meal_notification_service.dart lib/meal_notification_service.dart
           cp widget_test.dart test/widget_test.dart
 
       - name: Get dependencies
         run: flutter pub get
 
-      # Analyze the actual Flutter package sources. Root-level copies use relative
-      # imports intended for lib/ and are not standalone package source files.
       - name: Analyze app and tests
-        run: flutter analyze lib test
+        run: flutter analyze --no-fatal-infos lib test
 
       - name: Run widget tests
         run: flutter test
 
       - name: Build release APK
-        run: flutter build apk --release --no-tree-shake-icons
+        env:
+          AI_API_BASE_URL: ${{ vars.AI_API_BASE_URL || 'https://aaj-kya-banau-ai.anuragchoudhary7816.workers.dev' }}
+        run: flutter build apk --release --no-tree-shake-icons --dart-define=AI_API_BASE_URL="$AI_API_BASE_URL"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

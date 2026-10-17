@@ -1,11 +1,13 @@
-import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import '../data/kitchen_catalog.dart';
+import '../models/pantry_item.dart';
+import '../services/ingredient_recognition_service.dart';
 import '../state/kitchen_store.dart';
-import '../theme/app_theme.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -14,162 +16,166 @@ class ScanScreen extends StatefulWidget {
   State<ScanScreen> createState() => _ScanScreenState();
 }
 
-class _ScanScreenState extends State<ScanScreen> with SingleTickerProviderStateMixin {
-  late final AnimationController _line;
-  bool _found = false;
+class _ScanScreenState extends State<ScanScreen> {
+  final ImagePicker _picker = ImagePicker();
+  final Set<String> _selected = {};
+  List<Map<String, String>> _detected = [];
+  XFile? _image;
+  bool _loading = false;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _line = AnimationController(vsync: this, duration: const Duration(seconds: 2))
-      ..repeat(reverse: true);
-    Timer(const Duration(milliseconds: 2200), () {
-      if (mounted) setState(() => _found = true);
+    // Home screen par Camera scan tap karte hi phone ka camera khul jaye.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _chooseImage(ImageSource.camera);
     });
   }
 
-  @override
-  void dispose() {
-    _line.dispose();
-    super.dispose();
+  Future<void> _chooseImage(ImageSource source) async {
+    if (_loading) return;
+    try {
+      final image = await _picker.pickImage(source: source, imageQuality: 85, maxWidth: 1600);
+      if (image == null || !mounted) return;
+      setState(() {
+        _image = image;
+        _detected = [];
+        _selected.clear();
+        _error = null;
+        _loading = true;
+      });
+      final language = context.read<KitchenStore>().language;
+      final bytes = await image.readAsBytes();
+      final result = await IngredientRecognitionService().recognize(
+        base64Encode(bytes),
+        image.mimeType ?? 'image/jpeg',
+        language: language,
+      );
+      if (!mounted) return;
+      setState(() {
+        _detected = result;
+        _selected.addAll(result.map((item) => item['name']!).where((name) => name.isNotEmpty));
+        _loading = false;
+        if (result.isEmpty) _error = 'Koi saaf ingredient nahi mila. Roshni mein paas se photo lekar dobara try karo.';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = e.toString().replaceFirst('Exception: ', '');
+      });
+    }
+  }
+
+  void _addSelected() {
+    final store = context.read<KitchenStore>();
+    for (final item in _detected) {
+      final name = item['name'] ?? '';
+      if (name.isEmpty || !_selected.contains(name)) continue;
+      store.addPantryItem(PantryItem(
+        id: 'photo-${DateTime.now().microsecondsSinceEpoch}-${name.hashCode}',
+        name: name,
+        displayName: item['displayName'],
+        emoji: item['emoji'] ?? '🥬',
+      ));
+    }
+    Navigator.pop(context, true);
   }
 
   @override
   Widget build(BuildContext context) {
-    final finds = KitchenCatalog.scanFinds();
-
+    final store = context.watch<KitchenStore>();
     return Scaffold(
       backgroundColor: const Color(0xFF14110F),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF14110F),
+        foregroundColor: Colors.white,
+        title: Text(store.t('Scan or upload photo')),
+      ),
       body: SafeArea(
-        child: Padding(
+        child: ListView(
           padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    icon: const Icon(Icons.close, color: Colors.white),
-                  ),
-                  const Expanded(
-                    child: Text(
-                      'Scan pantry',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 48),
-                ],
+          children: [
+            if (_image != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.file(File(_image!.path), height: 250, fit: BoxFit.cover),
+              )
+            else
+              Container(
+                height: 210,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2A241F),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.document_scanner_outlined, color: Colors.white, size: 52),
+                    SizedBox(height: 12),
+                    Text(store.language == 'Hindi' ? 'कैमरा से फोटो लें या गैलरी से चुनें' : store.language == 'Hinglish' ? 'Camera se photo lo ya gallery se chuno' : 'Take a camera photo or choose one from your gallery', style: TextStyle(color: Colors.white70)),
+                  ],
+                ),
               ),
+            const SizedBox(height: 16),
+            Row(children: [
+              Expanded(child: FilledButton.icon(
+                onPressed: _loading ? null : () => _chooseImage(ImageSource.camera),
+                icon: const Icon(Icons.camera_alt_outlined),
+                label: Text(store.t('Camera scan')),
+              )),
+              const SizedBox(width: 12),
+              Expanded(child: OutlinedButton.icon(
+                onPressed: _loading ? null : () => _chooseImage(ImageSource.gallery),
+                icon: const Icon(Icons.photo_library_outlined),
+                label: Text(store.t('Photo upload')),
+                style: OutlinedButton.styleFrom(foregroundColor: Colors.white),
+              )),
+            ]),
+            const SizedBox(height: 20),
+            if (_loading) Center(child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Column(children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 12),
+                Text(store.language == 'Hindi' ? 'AI फोटो में सामग्री पहचान रहा है…' : store.language == 'Hinglish' ? 'AI photo mein ingredients pehchaan raha hai…' : 'AI is identifying ingredients in the photo…', style: TextStyle(color: Colors.white70)),
+              ]),
+            )),
+            if (_error != null)
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(14)),
+                child: Text(_error!, style: const TextStyle(color: Colors.white)),
+              ),
+            if (_detected.isNotEmpty && !_loading) ...[
+              Text(store.language == 'Hindi' ? 'पहचाने गए सामान — जोड़ने से पहले जाँचें' : store.language == 'Hinglish' ? 'Pehchaane gaye items — add karne se pehle check karo' : 'Detected items — review before adding', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
-              Expanded(
-                child: AnimatedBuilder(
-                  animation: _line,
-                  builder: (context, _) {
-                    return AspectRatio(
-                      aspectRatio: 3 / 4,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(28),
-                          border: Border.all(color: Colors.white24, width: 2),
-                          gradient: const LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Color(0xFF2A241F), Color(0xFF1A1613)],
-                          ),
-                        ),
-                        child: Stack(
-                          children: [
-                            const Center(
-                              child: Text('🥬  🍅  🧅', style: TextStyle(fontSize: 42)),
-                            ),
-                            if (!_found)
-                              Align(
-                                alignment: Alignment(0, (_line.value * 2) - 1),
-                                child: Container(
-                                  height: 3,
-                                  margin: const EdgeInsets.symmetric(horizontal: 18),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.saffron,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColors.saffron.withValues(alpha: 0.7),
-                                        blurRadius: 12,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            if (_found)
-                              Align(
-                                alignment: Alignment.bottomCenter,
-                                child: Container(
-                                  width: double.infinity,
-                                  margin: const EdgeInsets.all(12),
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.72),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Detected items',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10),
-                                      Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
-                                        children: [
-                                          for (final item in finds)
-                                            Chip(
-                                              avatar: Text(item.emoji),
-                                              label: Text(item.name),
-                                              backgroundColor: Colors.white,
-                                            ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _detected.map((item) {
+                  final name = item['name']!;
+                  return FilterChip(
+                    selected: _selected.contains(name),
+                    label: Text('${item['emoji'] ?? '🥬'} ${item['displayName'] ?? store.displayName(name)}'),
+                    onSelected: (value) => setState(() {
+                      value ? _selected.add(name) : _selected.remove(name);
+                    }),
+                  );
+                }).toList(),
               ),
-              const SizedBox(height: 18),
-              Text(
-                _found ? 'Looks tasty. Add these to your pantry?' : 'Hold steady… AI is reading labels',
-                style: const TextStyle(color: Colors.white70),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: !_found
-                      ? null
-                      : () {
-                          context.read<KitchenStore>().addScanFinds();
-                          Navigator.pop(context, true);
-                        },
-                  child: Text(_found ? 'Add to pantry' : 'Scanning…'),
-                ),
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: _selected.isEmpty ? null : _addSelected,
+                child: Text(store.language == 'Hindi' ? '${_selected.length} चुने हुए सामान रसोई में जोड़ें' : store.language == 'Hinglish' ? '${_selected.length} selected items pantry mein add karo' : 'Add ${_selected.length} selected item(s) to pantry'),
               ),
             ],
-          ),
+            const SizedBox(height: 12),
+            Text(store.language == 'Hindi' ? 'चुने और पुष्टि किए गए सामान ही रसोई में जुड़ेंगे।' : store.language == 'Hinglish' ? 'Items tabhi pantry mein add honge jab tum select karke confirm karoge.' : 'Only items you select and confirm will be added to your pantry.',
+              textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontSize: 12)),
+          ],
         ),
       ),
     );

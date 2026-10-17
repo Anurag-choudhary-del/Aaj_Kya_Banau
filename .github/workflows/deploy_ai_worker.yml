@@ -1,0 +1,46 @@
+name: Deploy AI photo recognition worker
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, feature/real-photo-scan-monthly-planner]
+    paths:
+      - "worker/**"
+      - ".github/workflows/deploy_ai_worker.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: "worker"
+      - name: Set OpenAI key as Worker secret
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "Missing repository secret OPENAI_API_KEY"
+            exit 1
+          fi
+          printf '%s' "$OPENAI_API_KEY" | npx --yes wrangler@4 secret put OPENAI_API_KEY --name aaj-kya-banau-ai --config worker/wrangler.toml
+
+      - name: Verify deployed Worker health endpoint
+        env:
+          AI_API_BASE_URL: ${{ vars.AI_API_BASE_URL || 'https://aaj-kya-banau-ai.anuragchoudhary7816.workers.dev' }}
+        run: |
+          set -euo pipefail
+          response="$(curl --fail --silent --show-error "${AI_API_BASE_URL%/}/health")"
+          echo "$response"
+          printf '%s' "$response" | grep -q '"ok":true'

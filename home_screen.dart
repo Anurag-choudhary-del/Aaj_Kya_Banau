@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../models/pantry_item.dart';
 import '../state/kitchen_store.dart';
@@ -15,9 +16,87 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _controller = TextEditingController();
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _listening = false;
+  bool _voiceTranscript = false;
+
+  Future<void> _listenForPantryItems(KitchenStore store) async {
+    final available = await _speech.initialize(
+      onStatus: (status) {
+        if (mounted) setState(() => _listening = status == 'listening');
+      },
+      onError: (_) {
+        if (mounted) {
+          setState(() => _listening = false);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(store.language == 'Hindi'
+                ? 'आवाज़ नहीं समझ आई। फिर कोशिश करें या टाइप करें।'
+                : store.language == 'Hinglish'
+                    ? 'Voice samajh nahi aayi. Dobara try karo ya type karo.'
+                    : 'Could not hear that. Try again or type the item.'),
+          ));
+        }
+      },
+    );
+    if (!available) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(store.language == 'Hindi'
+            ? 'इस डिवाइस पर voice input उपलब्ध नहीं है।'
+            : store.language == 'Hinglish'
+                ? 'Is device par voice input available nahi hai.'
+                : 'Voice input is unavailable on this device.'),
+      ));
+      return;
+    }
+    await _speech.listen(
+      localeId: store.language == 'Hindi' ? 'hi_IN' : 'en_IN',
+      listenFor: const Duration(seconds: 20),
+      pauseFor: const Duration(seconds: 3),
+      onResult: (result) {
+        if (!mounted || result.recognizedWords.trim().isEmpty) return;
+        setState(() {
+          _controller.text = result.recognizedWords;
+          _controller.selection = TextSelection.collapsed(offset: _controller.text.length);
+          _voiceTranscript = true;
+        });
+        if (result.finalResult) {
+          _speech.stop();
+          setState(() => _listening = false);
+        }
+      },
+    );
+    if (mounted) setState(() => _listening = true);
+  }
+
+  void _submitPantryText(KitchenStore store) {
+    final value = _controller.text.trim();
+    if (value.isEmpty) return;
+    if (_voiceTranscript) {
+      final count = store.addPantryItemsFromSpeech(value);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(count > 0
+            ? (store.language == 'Hindi'
+                ? '$count पहचाने गए सामान pantry में जोड़े गए।'
+                : store.language == 'Hinglish'
+                    ? '$count pehchane gaye items pantry mein add hue.'
+                    : 'Added $count recognized item(s) to pantry.')
+            : (store.language == 'Hindi'
+                ? 'कोई सामान पहचान नहीं आया। नाम टाइप करके जोड़ें।'
+                : store.language == 'Hinglish'
+                    ? 'Koi item samajh nahi aaya. Naam type karke add karo.'
+                    : 'No known ingredients recognized. Please type the item name.')),
+      ));
+    } else {
+      store.addManualItem(value);
+    }
+    _controller.clear();
+    setState(() => _voiceTranscript = false);
+  }
 
   @override
   void dispose() {
+    _speech.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -30,14 +109,54 @@ class _HomeScreenState extends State<HomeScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
-          const Text(
-            'Namaste 👋',
-            style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w600),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.cream,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: AppColors.saffron.withValues(alpha: 0.35)),
+                ),
+                child: const Icon(Icons.soup_kitchen_rounded, size: 29, color: AppColors.ink),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Kitchen Saheli', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: AppColors.ink)),
+                    const SizedBox(height: 1),
+                    const Text('Snap. Plan. Cook. Order!', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.saffron)),
+                    const SizedBox(height: 3),
+                    Text(
+                      store.t('Namaste 👋'),
+                      style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              DropdownButton<String>(
+                value: store.language,
+                underline: const SizedBox.shrink(),
+                isDense: true,
+                items: const [
+                  DropdownMenuItem(value: 'English', child: Text('English')),
+                  DropdownMenuItem(value: 'Hinglish', child: Text('Hinglish')),
+                  DropdownMenuItem(value: 'Hindi', child: Text('हिन्दी')),
+                ],
+                onChanged: (value) {
+                  if (value != null) store.setLanguage(value);
+                },
+              ),
+            ],
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Aaj kya banau?',
-            style: TextStyle(
+          Text(
+            store.t('Aaj kya banau?'),
+            style: const TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.w800,
               color: AppColors.ink,
@@ -46,7 +165,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '${store.pantry.length} items in your pantry · tap scan to add more',
+            store.language == 'Hindi'
+                ? 'आपकी रसोई में ${store.pantry.length} सामान · फोटो स्कैन करके और जोड़ें'
+                : store.language == 'Hinglish'
+                    ? '${store.pantry.length} items tumhari rasoi mein · photo scan karke aur add karo'
+                    : '${store.pantry.length} items in your pantry · scan or upload a photo to add more',
             style: const TextStyle(color: AppColors.muted),
           ),
           const SizedBox(height: 20),
@@ -57,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
               );
               if (added == true && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Scanned items added to pantry')),
+                  SnackBar(content: Text(store.language == 'Hindi' ? 'स्कैन किया गया सामान रसोई में जोड़ दिया' : store.language == 'Hinglish' ? 'Scanned items pantry mein add ho gaye' : 'Scanned items added to pantry')),
                 );
               }
             },
@@ -65,9 +188,9 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 22),
           Row(
             children: [
-              const Text(
-                'Your pantry',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              Text(
+                store.t('Your pantry'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
               ),
               const Spacer(),
               Text(
@@ -83,21 +206,26 @@ class _HomeScreenState extends State<HomeScreen> {
           TextField(
             controller: _controller,
             textInputAction: TextInputAction.done,
-            onSubmitted: (value) {
-              store.addManualItem(value);
-              _controller.clear();
-            },
+            onSubmitted: (_) => _submitPantryText(store),
             decoration: InputDecoration(
-              hintText: 'Add an item…  e.g. Methi',
+              hintText: store.t('Add an item…  e.g. Methi'),
               filled: true,
               fillColor: Colors.white,
               prefixIcon: const Icon(Icons.add_rounded),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.send_rounded, color: AppColors.saffron),
-                onPressed: () {
-                  store.addManualItem(_controller.text);
-                  _controller.clear();
-                },
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: _listening ? 'Listening' : 'Add by voice',
+                    icon: Icon(_listening ? Icons.mic : Icons.mic_none,
+                        color: _listening ? AppColors.missing : AppColors.saffron),
+                    onPressed: _listening ? () => _speech.stop() : () => _listenForPantryItems(store),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.send_rounded, color: AppColors.saffron),
+                    onPressed: () => _submitPantryText(store),
+                  ),
+                ],
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -107,9 +235,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 16),
           if (store.pantry.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 40),
-              child: Center(child: Text('Pantry is empty — scan or add items')),
+              child: Center(child: Text(store.t('Pantry is empty — scan or add items'))),
             )
           else
             ...store.pantry.map((item) => _PantryTile(item: item)),
@@ -126,6 +254,7 @@ class _ScanCta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final store = context.watch<KitchenStore>();
     return Material(
       color: AppColors.ink,
       borderRadius: BorderRadius.circular(24),
@@ -146,22 +275,22 @@ class _ScanCta extends StatelessWidget {
                 child: const Icon(Icons.photo_camera_rounded, color: Colors.white, size: 28),
               ),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Camera scan',
-                      style: TextStyle(
+                      store.t('Camera scan'),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      'Point at veggies — we will simulate AI detection',
-                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                      store.language == 'Hindi' ? 'AI से सामान पहचानने के लिए फोटो लें या अपलोड करें' : store.language == 'Hinglish' ? 'AI se ingredients pehchanne ke liye photo lo ya upload karo' : 'Take a photo or upload one for AI ingredient recognition',
+                      style: const TextStyle(color: Colors.white70, fontSize: 13),
                     ),
                   ],
                 ),
@@ -216,7 +345,7 @@ class _PantryTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.name,
+                    item.displayName ?? context.watch<KitchenStore>().displayName(item.name),
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                   ),
                   Text(
