@@ -82,12 +82,13 @@ class _ScanScreenState extends State<ScanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final store = context.watch<KitchenStore>();
     return Scaffold(
       backgroundColor: const Color(0xFF14110F),
       appBar: AppBar(
         backgroundColor: const Color(0xFF14110F),
         foregroundColor: Colors.white,
-        title: const Text('Scan or upload photo'),
+        title: Text(store.t('Scan or upload photo')),
       ),
       body: SafeArea(
         child: ListView(
@@ -111,7 +112,7 @@ class _ScanScreenState extends State<ScanScreen> {
                   children: [
                     Icon(Icons.document_scanner_outlined, color: Colors.white, size: 52),
                     SizedBox(height: 12),
-                    Text('Camera se photo lo ya gallery se chuno', style: TextStyle(color: Colors.white70)),
+                    Text(store.language == 'Hindi' ? 'कैमरा से फोटो लें या गैलरी से चुनें' : store.language == 'Hinglish' ? 'Camera se photo lo ya gallery se chuno' : 'Take a camera photo or choose one from your gallery', style: TextStyle(color: Colors.white70)),
                   ],
                 ),
               ),
@@ -120,13 +121,13 @@ class _ScanScreenState extends State<ScanScreen> {
               Expanded(child: FilledButton.icon(
                 onPressed: _loading ? null : () => _chooseImage(ImageSource.camera),
                 icon: const Icon(Icons.camera_alt_outlined),
-                label: const Text('Camera scan'),
+                label: Text(store.t('Camera scan')),
               )),
               const SizedBox(width: 12),
               Expanded(child: OutlinedButton.icon(
                 onPressed: _loading ? null : () => _chooseImage(ImageSource.gallery),
                 icon: const Icon(Icons.photo_library_outlined),
-                label: const Text('Photo upload'),
+                label: Text(store.t('Photo upload')),
                 style: OutlinedButton.styleFrom(foregroundColor: Colors.white),
               )),
             ]),
@@ -136,7 +137,7 @@ class _ScanScreenState extends State<ScanScreen> {
               child: Column(children: [
                 CircularProgressIndicator(),
                 SizedBox(height: 12),
-                Text('AI photo mein ingredients pehchaan raha hai…', style: TextStyle(color: Colors.white70)),
+                Text(store.language == 'Hindi' ? 'AI फोटो में सामग्री पहचान रहा है…' : store.language == 'Hinglish' ? 'AI photo mein ingredients pehchaan raha hai…' : 'AI is identifying ingredients in the photo…', style: TextStyle(color: Colors.white70)),
               ]),
             )),
             if (_error != null)
@@ -146,7 +147,7 @@ class _ScanScreenState extends State<ScanScreen> {
                 child: Text(_error!, style: const TextStyle(color: Colors.white)),
               ),
             if (_detected.isNotEmpty && !_loading) ...[
-              const Text('Pehchaane gaye items — confirm karne se pehle check karo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+              Text(store.language == 'Hindi' ? 'पहचाने गए सामान — जोड़ने से पहले जाँचें' : store.language == 'Hinglish' ? 'Pehchaane gaye items — add karne se pehle check karo' : 'Detected items — review before adding', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
@@ -155,7 +156,7 @@ class _ScanScreenState extends State<ScanScreen> {
                   final name = item['name']!;
                   return FilterChip(
                     selected: _selected.contains(name),
-                    label: Text('${item['emoji'] ?? '🥬'} $name'),
+                    label: Text('${item['emoji'] ?? '🥬'} ${store.displayName(name)}'),
                     onSelected: (value) => setState(() {
                       value ? _selected.add(name) : _selected.remove(name);
                     }),
@@ -165,11 +166,11 @@ class _ScanScreenState extends State<ScanScreen> {
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: _selected.isEmpty ? null : _addSelected,
-                child: Text('Add ${_selected.length} selected item(s) to pantry'),
+                child: Text(store.language == 'Hindi' ? '${_selected.length} चुने हुए सामान रसोई में जोड़ें' : store.language == 'Hinglish' ? '${_selected.length} selected items pantry mein add karo' : 'Add ${_selected.length} selected item(s) to pantry'),
               ),
             ],
             const SizedBox(height: 12),
-            const Text('Items tabhi pantry mein add honge jab tum select karke confirm karoge.',
+            Text(store.language == 'Hindi' ? 'चुने और पुष्टि किए गए सामान ही रसोई में जुड़ेंगे।' : store.language == 'Hinglish' ? 'Items tabhi pantry mein add honge jab tum select karke confirm karoge.' : 'Only items you select and confirm will be added to your pantry.',
               textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontSize: 12)),
           ],
         ),
