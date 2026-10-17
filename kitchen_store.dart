@@ -51,6 +51,11 @@ class KitchenStore extends ChangeNotifier {
   static const Map<String, Map<String, String>> _translations = {
     'Hindi': {
       'Pantry': 'रसोई',
+      'South Indian': 'दक्षिण भारतीय',
+      'North Indian': 'उत्तर भारतीय',
+      'East Indian': 'पूर्व भारतीय',
+      'West Indian': 'पश्चिम भारतीय',
+      'Complementary': 'पूरक विकल्प',
       'Recipes': 'रेसिपी',
       'Planner': 'मील प्लानर',
       'Cart': 'कार्ट',
@@ -188,6 +193,11 @@ class KitchenStore extends ChangeNotifier {
     },
     'Hinglish': {
       'Pantry': 'Rasoi',
+      'South Indian': 'South Indian',
+      'North Indian': 'North Indian',
+      'East Indian': 'East Indian',
+      'West Indian': 'West Indian',
+      'Complementary': 'Complementary option',
       'Recipes': 'Recipes',
       'Planner': 'Meal Planner',
       'Cart': 'Grocery Cart',
