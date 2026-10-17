@@ -4,18 +4,25 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
-/// Device-local meal reminders. Only explicitly selected meals are scheduled.
+class MealReminder {
+  const MealReminder({
+    required this.date,
+    required this.category,
+    required this.dish,
+  });
+
+  final DateTime date;
+  final String category;
+  final String dish;
+}
+
+/// Schedules reminders only for meals the user explicitly selected.
 class MealNotificationService {
   MealNotificationService._();
   static final MealNotificationService instance = MealNotificationService._();
 
   final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
-
-  static const int _breakfastId = 71001;
-  static const int _lunchId = 71002;
-  static const int _dinnerId = 71003;
-  static const int _snacksId = 71004;
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -24,10 +31,8 @@ class MealNotificationService {
       final timezone = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(timezone.identifier));
     } catch (error) {
-      // Keep the timezone database default if the device timezone is unavailable.
       debugPrint('Could not resolve device timezone for reminders: $error');
     }
-
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const ios = DarwinInitializationSettings();
     await _plugin.initialize(const InitializationSettings(android: android, iOS: ios));
@@ -37,56 +42,86 @@ class MealNotificationService {
   Future<bool> requestPermission() async {
     await initialize();
     final android = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-    final granted = await android?.requestNotificationsPermission();
+    final androidGranted = await android?.requestNotificationsPermission();
     final ios = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
     final iosGranted = await ios?.requestPermissions(alert: true, badge: true, sound: true);
-    return granted ?? iosGranted ?? true;
+    return androidGranted ?? iosGranted ?? true;
   }
 
   Future<void> cancelMealReminders() async {
     await initialize();
-    for (final id in [_breakfastId, _lunchId, _dinnerId, _snacksId]) {
-      await _plugin.cancel(id);
+    final pending = await _plugin.pendingNotificationRequests();
+    for (final request in pending) {
+      if (request.payload?.startsWith('meal:') ?? false) {
+        await _plugin.cancel(request.id);
+      }
     }
   }
 
-  /// Schedule the next day’s chosen breakfast/lunch/snacks and today’s chosen dinner.
-  /// Breakfast/lunch/snacks reminders are at 19:00, 19:15 and 19:30 respectively;
-  /// dinner reminder is at 12:30 on the day it is planned.
+  /// Schedules explicitly selected meals for the next 45 days. Breakfast,
+  /// lunch and snacks are reminded the previous evening; dinner is reminded
+  /// at 12:30 PM on the day it is planned.
   Future<void> schedule({
     required bool enabled,
-    required DateTime now,
     required String language,
-    required String? breakfast,
-    required String? lunch,
-    required String? dinner,
-    required String? snacks,
+    required List<MealReminder> reminders,
   }) async {
     await initialize();
     await cancelMealReminders();
-    if (!enabled) return;
+    if (!enabled || reminders.isEmpty) return;
 
-    final today = DateTime(now.year, now.month, now.day);
-    final tomorrow = today.add(const Duration(days: 1));
     final permission = await _hasPermissionOrRequest();
     if (!permission) return;
 
-    if (breakfast != null) {
-      await _scheduleAt(_breakfastId, today, 19, 0,
-        _title(language, 'breakfast'), _body(language, 'breakfast', breakfast));
+    for (final reminder in reminders) {
+      final day = DateTime(reminder.date.year, reminder.date.month, reminder.date.day);
+      final int hour;
+      final int minute;
+      final DateTime notificationDate;
+      switch (reminder.category) {
+        case 'Breakfast':
+          notificationDate = day.subtract(const Duration(days: 1));
+          hour = 19;
+          minute = 0;
+          break;
+        case 'Lunch':
+          notificationDate = day.subtract(const Duration(days: 1));
+          hour = 19;
+          minute = 15;
+          break;
+        case 'Snacks':
+          notificationDate = day.subtract(const Duration(days: 1));
+          hour = 19;
+          minute = 30;
+          break;
+        case 'Dinner':
+          notificationDate = day;
+          hour = 12;
+          minute = 30;
+          break;
+        default:
+          continue;
+      }
+      final id = _notificationId(day, reminder.category);
+      await _scheduleAt(
+        id,
+        notificationDate,
+        hour,
+        minute,
+        _title(language, reminder.category),
+        _body(language, reminder.category, reminder.dish),
+      );
     }
-    if (lunch != null) {
-      await _scheduleAt(_lunchId, today, 19, 15,
-        _title(language, 'lunch'), _body(language, 'lunch', lunch));
-    }
-    if (snacks != null) {
-      await _scheduleAt(_snacksId, today, 19, 30,
-        _title(language, 'snacks'), _body(language, 'snacks', snacks));
-    }
-    if (dinner != null) {
-      await _scheduleAt(_dinnerId, tomorrow, 12, 30,
-        _title(language, 'dinner'), _body(language, 'dinner', dinner));
-    }
+  }
+
+  int _notificationId(DateTime day, String category) {
+    final categoryId = switch (category) {
+      'Breakfast' => 1,
+      'Lunch' => 2,
+      'Dinner' => 3,
+      _ => 4,
+    };
+    return day.year * 100000 + day.month * 1000 + day.day * 10 + categoryId;
   }
 
   Future<bool> _hasPermissionOrRequest() async {
@@ -99,11 +134,9 @@ class MealNotificationService {
   }
 
   Future<void> _scheduleAt(int id, DateTime date, int hour, int minute, String title, String body) async {
-    var when = tz.TZDateTime(tz.local, date.year, date.month, date.day, hour, minute);
-    if (!when.isAfter(tz.TZDateTime.now(tz.local))) {
-      // Never schedule a stale reminder; the next planner change can schedule the next date.
-      return;
-    }
+    final when = tz.TZDateTime(tz.local, date.year, date.month, date.day, hour, minute);
+    if (!when.isAfter(tz.TZDateTime.now(tz.local))) return;
+
     const details = NotificationDetails(
       android: AndroidNotificationDetails(
         'meal_plan_reminders',
@@ -125,62 +158,56 @@ class MealNotificationService {
     );
   }
 
-  String _title(String language, String meal) {
+  String _title(String language, String category) {
     if (language == 'Hindi') {
-      return switch (meal) {
-        'breakfast' => 'कल के नाश्ते की याद',
-        'lunch' => 'कल के दोपहर के खाने की याद',
-        'dinner' => 'आज रात के खाने की याद',
+      return switch (category) {
+        'Breakfast' => 'कल के नाश्ते की याद',
+        'Lunch' => 'कल के दोपहर के खाने की याद',
+        'Dinner' => 'आज रात के खाने की याद',
         _ => 'कल के स्नैक्स की याद',
       };
     }
     if (language == 'Hinglish') {
-      return switch (meal) {
-        'breakfast' => 'Kal breakfast reminder',
-        'lunch' => 'Kal lunch reminder',
-        'dinner' => 'Aaj dinner reminder',
+      return switch (category) {
+        'Breakfast' => 'Kal breakfast reminder',
+        'Lunch' => 'Kal lunch reminder',
+        'Dinner' => 'Aaj dinner reminder',
         _ => 'Kal snacks reminder',
       };
     }
-    return switch (meal) {
-      'breakfast' => 'Tomorrow’s breakfast reminder',
-      'lunch' => 'Tomorrow’s lunch reminder',
-      'dinner' => 'Tonight’s dinner reminder',
+    return switch (category) {
+      'Breakfast' => 'Tomorrow’s breakfast reminder',
+      'Lunch' => 'Tomorrow’s lunch reminder',
+      'Dinner' => 'Tonight’s dinner reminder',
       _ => 'Tomorrow’s snacks reminder',
     };
   }
 
-  String _body(String language, String meal, String dish) {
+  String _body(String language, String category, String dish) {
     if (language == 'Hindi') {
-      final label = switch (meal) {
-        'breakfast' => 'कल नाश्ते में',
-        'lunch' => 'कल दोपहर के खाने में',
-        'dinner' => 'आज रात के खाने में',
+      final label = switch (category) {
+        'Breakfast' => 'कल नाश्ते में',
+        'Lunch' => 'कल दोपहर के खाने में',
+        'Dinner' => 'आज रात के खाने में',
         _ => 'कल स्नैक्स में',
       };
       return '$label $dish बनाने का प्लान है। क्या आपके पास सारी सामग्री है?';
     }
     if (language == 'Hinglish') {
-      final label = switch (meal) {
-        'breakfast' => 'Kal breakfast mein',
-        'lunch' => 'Kal lunch mein',
-        'dinner' => 'Aaj dinner mein',
+      final label = switch (category) {
+        'Breakfast' => 'Kal breakfast mein',
+        'Lunch' => 'Kal lunch mein',
+        'Dinner' => 'Aaj dinner mein',
         _ => 'Kal snacks mein',
       };
       return '$label $dish banane ka plan hai. Kya aapke paas saara samaan hai?';
     }
-    final label = switch (meal) {
-      'breakfast' => 'You planned',
-      'lunch' => 'You planned',
-      'dinner' => 'You planned',
-      _ => 'You planned',
-    };
-    final when = switch (meal) {
-      'breakfast' => 'for breakfast tomorrow',
-      'lunch' => 'for lunch tomorrow',
-      'dinner' => 'for dinner today',
+    final when = switch (category) {
+      'Breakfast' => 'for breakfast tomorrow',
+      'Lunch' => 'for lunch tomorrow',
+      'Dinner' => 'for dinner today',
       _ => 'for snacks tomorrow',
     };
-    return '$label $dish $when. Do you have all the ingredients?';
+    return 'You planned $dish $when. Do you have all the ingredients?';
   }
 }
