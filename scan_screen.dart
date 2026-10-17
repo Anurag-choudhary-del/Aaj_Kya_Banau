@@ -49,6 +49,7 @@ class _ScanScreenState extends State<ScanScreen> {
       final result = await IngredientRecognitionService().recognize(
         base64Encode(bytes),
         image.mimeType ?? 'image/jpeg',
+        language: context.read<KitchenStore>().language,
       );
       if (!mounted) return;
       setState(() {
@@ -74,6 +75,7 @@ class _ScanScreenState extends State<ScanScreen> {
       store.addPantryItem(PantryItem(
         id: 'photo-${DateTime.now().microsecondsSinceEpoch}-${name.hashCode}',
         name: name,
+        displayName: item['displayName'],
         emoji: item['emoji'] ?? '🥬',
       ));
     }
@@ -156,7 +158,7 @@ class _ScanScreenState extends State<ScanScreen> {
                   final name = item['name']!;
                   return FilterChip(
                     selected: _selected.contains(name),
-                    label: Text('${item['emoji'] ?? '🥬'} ${store.displayName(name)}'),
+                    label: Text('${item['emoji'] ?? '🥬'} ${item['displayName'] ?? store.displayName(name)}'),
                     onSelected: (value) => setState(() {
                       value ? _selected.add(name) : _selected.remove(name);
                     }),
