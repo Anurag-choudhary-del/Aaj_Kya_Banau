@@ -3,7 +3,7 @@ name: Deploy AI photo recognition worker
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, feature/real-photo-scan-monthly-planner]
     paths:
       - "worker/**"
       - ".github/workflows/deploy_ai_worker.yml"
