@@ -178,7 +178,7 @@ class _CheckoutBar extends StatelessWidget {
                 ? null
                 : () => _placeBlinkitOrder(context),
             icon: const Icon(Icons.bolt_rounded),
-            label: const Text('Blinkit Delivery'),
+            label: const Text('Blinkit (not connected)'),
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF0D9B4D),
               padding: const EdgeInsets.symmetric(vertical: 16),
