@@ -291,7 +291,7 @@ class KitchenStore extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final saved = prefs.getString(_languageStorageKey);
       if (saved == 'English' || saved == 'Hindi' || saved == 'Hinglish') {
-        language = saved;
+        language = saved!;
         notifyListeners();
       }
     } catch (_) {
@@ -540,13 +540,6 @@ class KitchenStore extends ChangeNotifier {
       ));
     }
     if (notify) notifyListeners();
-  }
-
-  void changeCartPackSize(String id, int packSize) {
-    final index = _cart.indexWhere((item) => item.id == id);
-    if (index < 0 || _cart[index].unit != 'kg' || ![1, 5, 10].contains(packSize)) return;
-    _cart[index] = _cart[index].copyWith(packSize: packSize);
-    notifyListeners();
   }
 
   void changeCartPackSize(String id, int packSize) {
