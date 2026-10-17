@@ -19,14 +19,14 @@ class CartScreen extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.fromLTRB(20, 16, 20, 4),
             child: Text(
-              'Grocery cart',
+              store.t('Grocery cart'),
               style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
             ),
           ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              'Quantities and indicative local-market estimates',
+              store.language == 'Hindi' ? 'मात्रा और स्थानीय बाज़ार के अनुमानित दाम' : store.language == 'Hinglish' ? 'Quantity aur local market ke estimated rates' : 'Quantities and indicative local-market estimates',
               style: TextStyle(color: AppColors.muted),
             ),
           ),
@@ -37,7 +37,7 @@ class CartScreen extends StatelessWidget {
                     child: Padding(
                       padding: EdgeInsets.all(32),
                       child: Text(
-                        'Cart is empty.\nAdd missing items from the Recipes tab.',
+                        store.t('Cart is empty.\nAdd missing items from the Recipes tab.'),
                         textAlign: TextAlign.center,
                         style: TextStyle(color: AppColors.muted, height: 1.4),
                       ),
@@ -84,7 +84,7 @@ class _CartTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.name, style: const TextStyle(fontWeight: FontWeight.w800)),
+                Text(store.displayName(item.name), style: const TextStyle(fontWeight: FontWeight.w800)),
                 Text(
                   '₹${item.price}/${item.unitLabel} estimated · line total ₹${item.lineTotal}',
                   style: const TextStyle(color: AppColors.missing, fontSize: 12, fontWeight: FontWeight.w600),
@@ -161,6 +161,7 @@ class _CheckoutBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final store = context.watch<KitchenStore>();
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
       decoration: BoxDecoration(
@@ -178,7 +179,7 @@ class _CheckoutBar extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text('Estimated total', style: TextStyle(color: AppColors.muted)),
+              Text(store.t('Estimated total'), style: const TextStyle(color: AppColors.muted)),
               const Spacer(),
               Text(
                 '₹$total',
@@ -187,14 +188,14 @@ class _CheckoutBar extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          const Text('Estimates only — not live Blinkit prices. Actual prices, pack sizes, availability and delivery fees may differ.', style: TextStyle(color: AppColors.muted, fontSize: 11)),
+          Text(store.language == 'Hindi' ? 'ये अनुमान हैं, Blinkit के लाइव दाम नहीं। असली दाम, पैक, उपलब्धता और डिलीवरी फीस अलग हो सकती है।' : store.language == 'Hinglish' ? 'Ye estimates hain, live Blinkit prices nahi. Actual price, pack aur delivery fee alag ho sakti hai.' : 'Estimates only — not live Blinkit prices. Actual prices, pack sizes, availability and delivery fees may differ.', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
           const SizedBox(height: 12),
           FilledButton.icon(
             onPressed: !enabled
                 ? null
                 : () => _placeBlinkitOrder(context),
             icon: const Icon(Icons.bolt_rounded),
-            label: const Text('Blinkit (not connected)'),
+            label: Text(store.language == 'Hindi' ? 'Blinkit (कनेक्ट नहीं है)' : store.language == 'Hinglish' ? 'Blinkit (connected nahi)' : 'Blinkit (not connected)'),
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF0D9B4D),
               padding: const EdgeInsets.symmetric(vertical: 16),
