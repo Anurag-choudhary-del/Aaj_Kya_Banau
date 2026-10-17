@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:aaj_kya_banau/main.dart';
+import 'package:aaj_kya_banau/data/planner_catalog.dart';
 
 void main() {
   testWidgets('home pantry and navigation load with an empty pantry', (tester) async {
@@ -31,4 +32,12 @@ void main() {
     expect(find.text('Grocery cart'), findsOneWidget);
     expect(find.text('Blinkit Delivery'), findsOneWidget);
   });
+}
+
+
+void plannerOffersFiveChoicesForEveryMealCategory() {
+  expect(PlannerCatalog.categories.keys.toSet(), {'Breakfast', 'Lunch', 'Dinner', 'Snacks'});
+  for (final category in PlannerCatalog.categories.keys) {
+    expect(PlannerCatalog.optionsForDay(category, 17), hasLength(5));
+  }
 }
